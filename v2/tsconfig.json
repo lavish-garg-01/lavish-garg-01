@@ -1,0 +1,24 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/contracts" },
+    { "path": "./packages/ai" },
+    { "path": "./packages/strategy-intelligence" },
+    { "path": "./packages/domain" },
+    { "path": "./packages/auth" },
+    { "path": "./packages/entitlements" },
+    { "path": "./packages/candidate-truth" },
+    { "path": "./packages/repeatable-entities" },
+    { "path": "./packages/form-graph" },
+    { "path": "./packages/declaration-policy" },
+    { "path": "./packages/field-intelligence" },
+    { "path": "./packages/execution" },
+    { "path": "./packages/verified-learning" },
+    { "path": "./packages/job-intelligence" },
+    { "path": "./packages/onboarding" },
+    { "path": "./packages/database" },
+    { "path": "./apps/api" },
+    { "path": "./apps/web" },
+    { "path": "./apps/extension" }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@job-hunter-v2/extension",
+  "version": "2.0.4",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bash ../../scripts/with-node.sh bash -c 'tsc -b --pretty false && node scripts/build.mjs \"$@\"' --",
+    "typecheck": "bash ../../scripts/with-node.sh bash -c 'tsc -b --pretty false \"$@\"' --",
+    "test:browser": "bash ../../scripts/with-node.sh bash -c 'node --import tsx scripts/browser-smoke.ts \"$@\"' --"
+  },
+  "dependencies": {
+    "@job-hunter-v2/contracts": "0.1.0",
+    "@job-hunter-v2/form-graph": "0.1.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.2.8",
+    "esbuild": "0.28.2",
+    "playwright": "1.62.1"
+  }
+}

@@ -1,0 +1,15 @@
+Asha Verma
+asha.audit@example.test
++91 90000 00001
+
+Software Engineer
+
+Experience
+Vidyakul — Software Engineer — 2022 to present
+Built TypeScript and Node.js services backed by PostgreSQL.
+
+Skills
+TypeScript, React, Node.js, PostgreSQL, AWS
+
+Education
+B.Tech Computer Science, Audit Institute of Technology, 2022

@@ -1,0 +1,3 @@
+# Python deps for JobSpy India ingestion (use project .venv)
+# Install: uv venv --python 3.12 .venv && uv pip install -r requirements.txt
+python-jobspy>=1.1.82

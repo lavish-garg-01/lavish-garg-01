@@ -1,0 +1,79 @@
+{
+  "manifest_version": 3,
+  "name": "Job Hunter COPILOT",
+  "version": "1.15.8",
+  "description": "A review-only application copilot with a user-controlled side panel and safe learning.",
+  "permissions": [
+    "activeTab",
+    "alarms",
+    "storage",
+    "tabs",
+    "tabGroups",
+    "webNavigation",
+    "sidePanel",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:3000/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3001/*",
+    "http://localhost:3001/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src http://127.0.0.1:3001 http://localhost:3001"
+  },
+  "action": {
+    "default_title": "Open Job Hunter side panel"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://127.0.0.1:3000/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3001/*",
+        "http://localhost:3001/*"
+      ],
+      "js": [
+        "contracts/shared-contract-validator.js",
+        "adapters/registry.js",
+        "adapters/runtime.js",
+        "adapters/common/shadow.js",
+        "adapters/common/identity.js",
+      "adapters/common/dates.js",
+        "adapters/common/uploads.js",
+        "adapters/common/repeatables.js",
+        "adapters/common/hops.js",
+        "runtime/scanner.js",
+        "runtime/ownership.js",
+        "runtime/executor.js",
+        "runtime/verifier.js",
+        "runtime/telemetry.js",
+        "runtime/orchestrator.js",
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/pet-robot-v2.png"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

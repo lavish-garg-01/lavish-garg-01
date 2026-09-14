@@ -1,0 +1,51 @@
+{
+  "portalKind": "linkedin",
+  "version": 1,
+  "stage": "DEFAULT",
+  "hotPath": {
+    "identityOnly": true,
+    "skipLlmOn": [
+      "FIRST_NAME",
+      "LAST_NAME",
+      "FULL_NAME",
+      "EMAIL",
+      "PHONE",
+      "RESUME",
+      "COVER_LETTER"
+    ]
+  },
+  "skipSelectors": [],
+  "fileFields": {
+    "resume": {
+      "testIds": [
+        "linkedin-resume"
+      ],
+      "labelPatterns": [
+        "resume",
+        "curriculum",
+        "cv"
+      ]
+    },
+    "coverLetter": {
+      "testIds": [
+        "linkedin-cover-letter"
+      ],
+      "labelPatterns": [
+        "cover letter"
+      ]
+    }
+  },
+  "neverFill": [
+    "password",
+    "otp",
+    "captcha",
+    "legal",
+    "consent"
+  ],
+  "controlKindAliases": {
+    "radiogroup": "choice-group"
+  },
+  "overlays": {
+    "preferTestIdForUploads": true
+  }
+}

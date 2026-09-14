@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume studio — Job Hunter Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#102a43",
+            panel: "#f5f7fa",
+            accent: "#0f766e",
+            warn: "#b45309"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; }
+    textarea { min-height: 6.5rem; }
+    .field { @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 bg-white; }
+  </style>
+</head>
+<body class="bg-slate-100 text-ink min-h-screen pb-28">
+  <%- include('partials/header') %>
+
+  <% if (error) { %>
+    <div class="max-w-[1600px] mx-auto px-4 pt-4">
+      <div class="rounded-lg border border-red-200 bg-red-50 text-red-800 px-4 py-3 text-sm"><%= error %></div>
+    </div>
+  <% } %>
+  <% if (success) { %>
+    <div class="max-w-[1600px] mx-auto px-4 pt-4">
+      <div class="rounded-lg border border-teal-200 bg-teal-50 text-teal-900 px-4 py-3 text-sm"><%= success %></div>
+    </div>
+  <% } %>
+
+  <div class="max-w-[1600px] mx-auto px-4 py-4 grid grid-cols-1 xl:grid-cols-12 gap-4">
+    <form id="resume-form" method="POST" action="/resume" class="xl:col-span-8 space-y-4">
+      <section class="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <div>
+          <h2 class="text-lg font-bold">Master resume</h2>
+          <p class="text-sm text-slate-500">This is what scoring, tailoring, and PDFs read. Add honest skills and rewrite bullets with the same stack/metrics JDs use — do not invent employers.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="text-sm font-semibold">Full name
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="fullName" value="<%= resume.fullName || '' %>" required />
+          </label>
+          <label class="text-sm font-semibold">Email
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="email" type="email" value="<%= resume.email || '' %>" required />
+          </label>
+          <label class="text-sm font-semibold">Phone
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="phone" value="<%= resume.phone || '' %>" />
+          </label>
+          <label class="text-sm font-semibold">Notice period (days, 0 = none)
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="noticePeriodDays" type="number" min="0" value="<%= resume.noticePeriodDays ?? 0 %>" />
+          </label>
+          <label class="text-sm font-semibold md:col-span-2">Location
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="location" value="<%= resume.location || '' %>" />
+          </label>
+          <label class="text-sm font-semibold">LinkedIn
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="linkedin" value="<%= resume.linkedin || '' %>" />
+          </label>
+          <label class="text-sm font-semibold">GitHub
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="github" value="<%= resume.github || '' %>" />
+          </label>
+          <label class="text-sm font-semibold md:col-span-2">Portfolio
+            <input class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" name="portfolio" value="<%= resume.portfolio || '' %>" />
+          </label>
+        </div>
+        <label class="block text-sm font-semibold">Professional summary
+          <textarea name="summary" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required><%= resume.summary || '' %></textarea>
+        </label>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <h2 class="text-lg font-bold">Skills &amp; match keywords</h2>
+        <p class="text-sm text-slate-500">Skills appear on the PDF. Match keywords are extra tokens for pre-score / OpenAI overlap (Kafka, PostgreSQL, k8s, etc.) without cluttering the skill line unless you also add them to Skills.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="text-sm font-semibold">Skills <span class="font-normal text-slate-500">(comma or new line)</span>
+            <textarea id="skills-field" name="skills" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[10rem]"><%= (resume.skills || []).join(', ') %></textarea>
+          </label>
+          <label class="text-sm font-semibold">Match keywords <span class="font-normal text-slate-500">(comma or new line)</span>
+            <textarea id="keywords-field" name="keywords" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[10rem]"><%= (resume.keywords || []).join(', ') %></textarea>
+          </label>
+        </div>
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h3 class="text-sm font-semibold">Skill groups (PDF grouping)</h3>
+            <button type="button" data-add="skill-group" class="text-xs font-semibold text-accent">+ Add group</button>
+          </div>
+          <div id="skill-groups" class="space-y-2">
+            <% const groups = Object.entries(resume.skillGroups || {}); %>
+            <% groups.forEach(function(entry, i) { %>
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-2 items-start" data-item="skill-group">
+                <input name="skillGroup[<%= i %>][name]" value="<%= entry[0] %>" placeholder="Group name" class="md:col-span-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input name="skillGroup[<%= i %>][values]" value="<%= (entry[1] || []).join(', ') %>" placeholder="Skills in this group" class="md:col-span-3 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700 py-2">Remove</button>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-bold">Experience</h2>
+          <button type="button" data-add="role" class="text-xs font-semibold text-accent">+ Add role</button>
+        </div>
+        <p class="text-sm text-slate-500">Rewrite bullets with JD language you actually used (Node.js, Redis, ClickHouse, latency, MAU). One bullet per line.</p>
+        <div id="experience-list" class="space-y-4">
+          <% (resume.experience || []).forEach(function(role, i) { %>
+            <fieldset class="rounded-lg border border-slate-200 p-4 space-y-3" data-item="role">
+              <legend class="text-sm font-semibold px-1">Role</legend>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <input name="experience[<%= i %>][title]" value="<%= role.title || '' %>" placeholder="Title" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input name="experience[<%= i %>][company]" value="<%= role.company || '' %>" placeholder="Company" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input name="experience[<%= i %>][startDate]" value="<%= role.startDate || '' %>" placeholder="Start (YYYY-MM)" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input name="experience[<%= i %>][endDate]" value="<%= role.endDate || '' %>" placeholder="End or Present" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input name="experience[<%= i %>][location]" value="<%= role.location || '' %>" placeholder="Location" class="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <textarea name="experience[<%= i %>][bullets]" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="One bullet per line"><%= (role.bullets || []).join('\n') %></textarea>
+              <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700">Remove role</button>
+            </fieldset>
+          <% }) %>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-bold">Projects</h2>
+          <button type="button" data-add="project" class="text-xs font-semibold text-accent">+ Add project</button>
+        </div>
+        <div id="project-list" class="space-y-3">
+          <% (resume.projects || []).forEach(function(project, i) { %>
+            <div class="rounded-lg border border-slate-200 p-4 space-y-2" data-item="project">
+              <input name="project[<%= i %>][name]" value="<%= project.name || '' %>" placeholder="Project name" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <textarea name="project[<%= i %>][bullets]" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="One bullet per line"><%= (project.bullets || []).join('\n') %></textarea>
+              <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700">Remove</button>
+            </div>
+          <% }) %>
+        </div>
+      </section>
+
+      <section class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-bold">Education</h2>
+          <button type="button" data-add="education" class="text-xs font-semibold text-accent">+ Add education</button>
+        </div>
+        <div id="education-list" class="space-y-3">
+          <% (resume.education || []).forEach(function(edu, i) { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border border-slate-200 p-4" data-item="education">
+              <input name="education[<%= i %>][degree]" value="<%= edu.degree || '' %>" placeholder="Degree" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <input name="education[<%= i %>][school]" value="<%= edu.school || '' %>" placeholder="School" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <input name="education[<%= i %>][startDate]" value="<%= edu.startDate || '' %>" placeholder="Start" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <input name="education[<%= i %>][endDate]" value="<%= edu.endDate || '' %>" placeholder="End" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700 md:col-span-2 text-left">Remove</button>
+            </div>
+          <% }) %>
+        </div>
+      </section>
+
+      <div class="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 sticky bottom-3 shadow-sm">
+        <label class="text-sm text-slate-600 flex items-start gap-2">
+          <input type="checkbox" name="requeueDiscarded" value="1" class="mt-1" />
+          <span>After save, requeue Close / Discarded jobs as Pending so the next <code class="bg-slate-100 px-1 rounded">npm run ingest</code> rescores them with this resume.</span>
+        </label>
+        <button type="submit" class="rounded-lg bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-teal-800">Save resume</button>
+      </div>
+    </form>
+
+    <aside class="xl:col-span-4 space-y-4 xl:sticky xl:top-4 self-start">
+      <section class="bg-white border border-slate-200 rounded-xl p-5">
+        <h2 class="font-bold mb-1">Gap keywords from your pipeline</h2>
+        <p class="text-sm text-slate-500 mb-3">Pulled from Close / Rejected / Prefiltered jobs. Add only terms you can honestly claim — then they lift keyword overlap and match score.</p>
+        <% if (!gaps.length) { %>
+          <p class="text-sm text-slate-500">No gap terms yet. Run ingest so discarded jobs can teach the studio.</p>
+        <% } %>
+        <div class="flex flex-wrap gap-2">
+          <% gaps.forEach(function(gap) { %>
+            <button type="button" class="gap-chip text-left text-xs rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 hover:border-accent hover:bg-teal-50" data-term="<%= gap.label %>">
+              <%= gap.label %> <span class="text-slate-400"><%= gap.count %></span>
+            </button>
+          <% }) %>
+        </div>
+        <p class="text-xs text-slate-400 mt-3">Click a chip to append it to Match keywords (not saved until you hit Save).</p>
+      </section>
+      <section class="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600 space-y-2">
+        <h2 class="font-bold text-ink">How this raises match rate</h2>
+        <ul class="list-disc pl-4 space-y-1">
+          <li>Pre-score looks for skill/keyword overlap before OpenAI runs.</li>
+          <li>Put stack words from your real work into bullets (Redis, ClickHouse, WebSocket, AWS).</li>
+          <li>Match keywords catch JD synonyms you do not want on the one-line skill list.</li>
+          <li>A previous copy is kept as <code class="bg-slate-100 px-1 rounded">data/master_resume.backup.json</code>.</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <template id="tpl-skill-group">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-2 items-start" data-item="skill-group">
+      <input name="skillGroup[__I__][name]" placeholder="Group name" class="md:col-span-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      <input name="skillGroup[__I__][values]" placeholder="Skills in this group" class="md:col-span-3 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700 py-2">Remove</button>
+    </div>
+  </template>
+  <template id="tpl-role">
+    <fieldset class="rounded-lg border border-slate-200 p-4 space-y-3" data-item="role">
+      <legend class="text-sm font-semibold px-1">Role</legend>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <input name="experience[__I__][title]" placeholder="Title" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <input name="experience[__I__][company]" placeholder="Company" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <input name="experience[__I__][startDate]" placeholder="Start (YYYY-MM)" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <input name="experience[__I__][endDate]" placeholder="End or Present" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+        <input name="experience[__I__][location]" placeholder="Location" class="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      </div>
+      <textarea name="experience[__I__][bullets]" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="One bullet per line"></textarea>
+      <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700">Remove role</button>
+    </fieldset>
+  </template>
+  <template id="tpl-project">
+    <div class="rounded-lg border border-slate-200 p-4 space-y-2" data-item="project">
+      <input name="project[__I__][name]" placeholder="Project name" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      <textarea name="project[__I__][bullets]" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="One bullet per line"></textarea>
+      <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700">Remove</button>
+    </div>
+  </template>
+  <template id="tpl-education">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border border-slate-200 p-4" data-item="education">
+      <input name="education[__I__][degree]" placeholder="Degree" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      <input name="education[__I__][school]" placeholder="School" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      <input name="education[__I__][startDate]" placeholder="Start" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      <input name="education[__I__][endDate]" placeholder="End" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+      <button type="button" data-remove class="text-xs text-slate-500 hover:text-red-700 md:col-span-2 text-left">Remove</button>
+    </div>
+  </template>
+
+  <script>
+    (function () {
+      var maps = {
+        "skill-group": { tpl: "tpl-skill-group", list: "skill-groups" },
+        role: { tpl: "tpl-role", list: "experience-list" },
+        project: { tpl: "tpl-project", list: "project-list" },
+        education: { tpl: "tpl-education", list: "education-list" }
+      };
+      var next = Date.now();
+
+      document.addEventListener("click", function (event) {
+        var add = event.target.closest("[data-add]");
+        if (add) {
+          var kind = add.getAttribute("data-add");
+          var spec = maps[kind];
+          var tpl = document.getElementById(spec.tpl);
+          var node = tpl.content.firstElementChild.cloneNode(true);
+          node.innerHTML = node.innerHTML.replaceAll("__I__", String(next++));
+          Array.from(node.querySelectorAll("[name]")).forEach(function (el) {
+            el.name = el.name.replaceAll("__I__", String(next - 1));
+          });
+          document.getElementById(spec.list).appendChild(node);
+        }
+        var remove = event.target.closest("[data-remove]");
+        if (remove) {
+          var item = remove.closest("[data-item]");
+          if (item) item.remove();
+        }
+      });
+
+      document.querySelectorAll(".gap-chip").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var field = document.getElementById("keywords-field");
+          var term = btn.getAttribute("data-term") || "";
+          if (!field || !term) return;
+          var current = field.value.trim();
+          var already = current.toLowerCase().split(/[\n,;]+/).map(function (s) { return s.trim(); }).includes(term.toLowerCase());
+          if (already) return;
+          field.value = current ? current + ", " + term : term;
+          field.focus();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

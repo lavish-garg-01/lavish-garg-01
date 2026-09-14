@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Live miss · location combobox</title>
+</head>
+<body>
+  <form id="application">
+    <label for="location-combo">Location</label>
+    <input
+      id="location-combo"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-controls="location-listbox"
+      aria-activedescendant="location-opt-gurugram"
+      aria-expanded="true"
+      value=""
+    />
+    <ul id="location-listbox" role="listbox">
+      <li id="location-opt-delhi" role="option">New Delhi, India</li>
+      <li id="location-opt-gurugram" role="option" class="highlighted">Gurugram, Haryana, India</li>
+      <li id="location-opt-bengaluru" role="option">Bengaluru, Karnataka, India</li>
+    </ul>
+  </form>
+</body>
+</html>

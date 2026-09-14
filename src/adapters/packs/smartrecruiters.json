@@ -1,0 +1,52 @@
+{
+  "portalKind": "smartrecruiters",
+  "version": 1,
+  "stage": "DEFAULT",
+  "hotPath": {
+    "identityOnly": true,
+    "skipLlmOn": [
+      "FIRST_NAME",
+      "LAST_NAME",
+      "EMAIL",
+      "PHONE",
+      "LOCATION",
+      "LINKEDIN_URL",
+      "PORTFOLIO_URL",
+      "GITHUB_URL",
+      "WEBSITE_URL",
+      "SOCIAL_FACEBOOK_URL",
+      "SOCIAL_TWITTER_URL",
+      "RESUME",
+      "COVER_LETTER"
+    ]
+  },
+  "skipSelectors": [
+    "input[type=\"file\"][aria-label*=\"profile image\" i]"
+  ],
+  "skipAncestorSelectors": [
+    "oc-apply-with-resume"
+  ],
+  "fileFields": {
+    "resume": {
+      "testIds": ["smartrecruiters-resume", "file-input"],
+      "labelPatterns": ["resume", "curriculum", "cv"],
+      "eventRecipe": ["change"],
+      "attachAttempts": 1,
+      "verifyDelayMs": 650
+    },
+    "coverLetter": {
+      "testIds": ["smartrecruiters-cover-letter"],
+      "labelPatterns": ["cover letter"],
+      "eventRecipe": ["change"],
+      "attachAttempts": 1,
+      "verifyDelayMs": 650
+    }
+  },
+  "neverFill": ["password", "otp", "captcha", "legal", "consent"],
+  "overlays": {
+    "applicationHost": "(?:^|\\.)smartrecruiters\\.com$",
+    "applicationRoute": "^/oneclick-ui/",
+    "formContainers": "oc-oneclick-form, oc-oneclick-form-root, main",
+    "openShadowDom": true
+  }
+}

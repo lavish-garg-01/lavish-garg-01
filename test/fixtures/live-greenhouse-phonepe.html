@@ -1,0 +1,109 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head><body><form id="application_form">
+  <label>First Name<input name="first_name" autocomplete="given-name"></label>
+  <label>Last Name<input name="last_name" autocomplete="family-name"></label>
+  <label>Email<input name="email" type="email" autocomplete="email"></label>
+  <section class="employment-form employment--container">
+    <label>Company name*<input id="company-name-0"></label>
+    <label>Title*<input id="title-0"></label>
+    <label id="start-date-month-0-label">Start date month*</label>
+    <div data-select-root><div class="select__control"><div class="select__value-container"><div class="select__input-container">
+      <input id="start-date-month-0" class="select__input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-labelledby="start-date-month-0-label" aria-required="true">
+    </div></div></div></div>
+    <label>Start date year*<input id="start-date-year-0"></label>
+    <label id="end-date-month-0-label">End date month*</label>
+    <div data-select-root><div class="select__control"><div class="select__value-container"><div class="select__input-container">
+      <input id="end-date-month-0" class="select__input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-labelledby="end-date-month-0-label" aria-required="true">
+    </div></div></div></div>
+    <label>End date year*<input id="end-date-year-0"></label>
+    <label><input id="current-role-0_1" type="checkbox">I currently work here</label>
+  </section>
+  <section class="education--form education--container">
+    <label id="degree--0-label">Degree*</label>
+    <div data-select-root><div class="select__control"><div class="select__value-container"><div class="select__input-container">
+      <input id="degree--0" class="select__input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-labelledby="degree--0-label" aria-required="true">
+    </div></div></div></div>
+    <label>Start date year*<input id="start-year--0" type="number"></label>
+    <label>End date year*<input id="end-year--0" type="number"></label>
+  </section>
+  <label id="years-experience-label">Years of Expereince*</label>
+  <div data-select-root><div class="select__control"><div class="select__value-container"><div class="select__input-container">
+    <input id="years-experience" class="select__input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-labelledby="years-experience-label" aria-required="true">
+  </div></div></div></div>
+  <label id="source-label">Source of your application?*</label>
+  <div data-select-root><div class="select__control"><div class="select__value-container"><div class="select__input-container">
+    <input id="source" class="select__input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-labelledby="source-label" aria-required="true">
+  </div></div></div></div>
+  <label>Resume<input id="resume" type="file"></label>
+  <div class="file-upload" id="resume-receipt"></div>
+  <script>
+    document.getElementById("resume").addEventListener("change", (event) => {
+      const file = event.currentTarget.files[0];
+      if (!file) return;
+      const receipt = document.getElementById("resume-receipt");
+      receipt.innerHTML = '<span class="file-upload__filename">' + file.name + '</span>';
+      event.currentTarget.remove();
+    });
+
+    function mountReactSelect(inputId, values) {
+      const input = document.getElementById(inputId);
+      const root = input.closest("[data-select-root]");
+      const listId = "react-select-" + inputId + "-listbox";
+      const close = () => {
+        document.getElementById(listId)?.remove();
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-controls");
+        input.removeAttribute("aria-activedescendant");
+      };
+      const choose = (value) => {
+        root.querySelector(".select__single-value")?.remove();
+        const selected = document.createElement("div");
+        selected.className = "select__single-value";
+        selected.textContent = value;
+        root.querySelector(".select__value-container").prepend(selected);
+        input.value = "";
+        root.dataset.commitCount = String(Number(root.dataset.commitCount || 0) + 1);
+        close();
+      };
+      const render = () => {
+        document.getElementById(listId)?.remove();
+        const list = document.createElement("div");
+        list.id = listId;
+        list.className = "select__menu-list";
+        list.setAttribute("role", "listbox");
+        values.forEach((value, index) => {
+          const option = document.createElement("div");
+          option.id = "react-select-" + inputId + "-option-" + index;
+          option.className = "select__option";
+          option.setAttribute("role", "option");
+          option.textContent = value;
+          option.addEventListener("mousedown", (event) => { event.preventDefault(); choose(value); });
+          list.appendChild(option);
+        });
+        document.body.appendChild(list);
+        input.setAttribute("aria-expanded", "true");
+        input.setAttribute("aria-controls", listId);
+      };
+      input.addEventListener("focus", render);
+      input.addEventListener("click", render);
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") close();
+        if (event.key === "ArrowDown") {
+          const first = document.querySelector("#" + CSS.escape(listId) + " [role=option]");
+          if (first) input.setAttribute("aria-activedescendant", first.id);
+        }
+        if (event.key === "Enter") {
+          const active = document.getElementById(input.getAttribute("aria-activedescendant"));
+          if (active) choose(active.textContent);
+        }
+      });
+    }
+
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    mountReactSelect("start-date-month-0", months);
+    mountReactSelect("end-date-month-0", months);
+    mountReactSelect("degree--0", ["High School", "Associate’s Degree", "Bachelor’s Degree", "Master’s Degree", "PhD"]);
+    mountReactSelect("years-experience", ["Not Applicable", "0-1", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "15+"]);
+    mountReactSelect("source", ["PhonePe Career Site", "Linkedln", "Indeed", "Other Job Board"]);
+  </script>
+</form></body></html>

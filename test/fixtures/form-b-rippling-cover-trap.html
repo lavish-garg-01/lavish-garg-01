@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Form B · Rippling cover-letter trap</title>
+</head>
+<body>
+  <main>
+    <h1>Application</h1>
+    <form id="application">
+      <label data-field="full_name">Full name
+        <input type="text" name="full_name" autocomplete="name" />
+      </label>
+      <label data-field="email">Email
+        <input type="email" name="email" autocomplete="email" />
+      </label>
+      <label data-field="phone">Phone
+        <input type="tel" name="phone" autocomplete="tel" />
+      </label>
+
+      <!--
+        Trap: the cover-letter control’s visible text includes “CV”.
+        A poison pack that maps resume via labelPatterns: ["cv"] (and drops
+        input-resume) will bind resume to this cover control. The owned
+        Rippling DEFAULT pack must keep testId precedence and stay green.
+      -->
+      <label data-field="cover_letter">Cover letter / CV upload
+        <input type="file" name="cover" data-testid="input-cover_letter" aria-label="CV" accept="application/pdf" />
+      </label>
+      <label data-field="resume">Resume PDF
+        <input type="file" name="resume" data-testid="input-resume" accept="application/pdf" />
+      </label>
+    </form>
+  </main>
+</body>
+</html>

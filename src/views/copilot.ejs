@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Application COPILOT — Job Hunter Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: "#102a43", panel: "#f5f7fa", accent: "#0f766e" } } } };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>body{font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif} textarea{min-height:6rem}</style>
+</head>
+<body class="min-h-screen bg-slate-100 text-ink">
+  <%- include('partials/header') %>
+
+  <div class="max-w-[1600px] mx-auto px-4 pt-4 space-y-3">
+    <% if (error) { %><div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><%= error %></div><% } %>
+    <% if (success) { %><div class="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900"><%= success %></div><% } %>
+    <div class="rounded-xl border <%= allowRealSubmission ? 'border-red-300 bg-red-50 text-red-950' : 'border-amber-200 bg-amber-50 text-amber-950' %> p-4 text-sm">
+      <% if (allowRealSubmission) { %>
+        <strong>Current-browser extension mode is ON (review-only):</strong> install the unpacked extension from <code class="rounded bg-white px-1">extension/</code>. It opens jobs in your signed-in Chrome profile, follows Apply pages, fills grounded answers, attaches the selected resume, and never submits for you.
+      <% } else { %>
+        <strong>Safe local COPILOT:</strong> preparation uses only the built-in local test form. Employer-form preparation switch: <code class="rounded bg-white px-1">OFF</code>.
+      <% } %>
+    </div>
+  </div>
+
+  <main class="max-w-[1600px] mx-auto px-4 py-4 space-y-4">
+    <section class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">
+      <% const metricCards = [
+        ['Jobs', metrics.totalJobs], ['Qualified', metrics.qualifiedJobs], ['Prepared', metrics.applicationsPrepared],
+        ['Submitted', metrics.applicationsSubmitted], ['Verified', metrics.applicationsSuccessful], ['Failed', metrics.applicationsFailed],
+        ['Unknown questions', metrics.unknownQuestionCount], ['User answers', metrics.userInterventionCount]
+      ]; %>
+      <% metricCards.forEach(function(card) { %>
+        <div class="rounded-xl border border-slate-200 bg-white p-3 text-sm"><strong class="block text-xl text-accent"><%= card[1] %></strong><%= card[0] %></div>
+      <% }) %>
+    </section>
+
+    <section class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <form method="POST" action="/copilot/profile" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        <div><h2 class="text-lg font-bold">Candidate profile</h2><p class="text-sm text-slate-500">Verified facts used to answer application forms. Unknown facts always pause for you.</p></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <label class="font-semibold">Name<input name="name" required value="<%= profile.name %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Email<input name="email" type="email" required value="<%= profile.email %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Phone<input name="phone" value="<%= profile.phone %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Preferred first name<input name="preferredFirstName" value="<%= profile.preferredFirstName %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Preferred last name<input name="preferredLastName" value="<%= profile.preferredLastName %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Country<input name="country" value="<%= profile.country %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Current location<input name="currentLocation" value="<%= profile.currentLocation %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">PIN / postal code<input name="postalCode" value="<%= profile.postalCode %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Current company<input name="currentCompany" value="<%= profile.currentCompany %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Current industry<input name="currentIndustry" value="<%= profile.currentIndustry %>" placeholder="Fintech, Edtech, SaaS" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">LinkedIn URL<input name="linkedinUrl" type="url" value="<%= profile.linkedinUrl %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold md:col-span-2">Portfolio URL<input name="portfolioUrl" type="url" value="<%= profile.portfolioUrl %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Current CTC (LPA)<input name="currentCTC" type="number" step="0.1" value="<%= profile.currentCTC ?? '' %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Expected CTC (LPA)<input name="expectedCTC" type="number" step="0.1" value="<%= profile.expectedCTC ?? '' %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Notice period (days)<input name="noticePeriodDays" type="number" min="0" value="<%= profile.noticePeriodDays %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Last working date<input name="lastWorkingDate" type="date" value="<%= profile.lastWorkingDate %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Total experience (years)<input name="totalExperienceYears" type="number" min="0" step="0.1" value="<%= profile.totalExperienceYears ?? '' %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold">Minimum salary (LPA)<input name="minimumSalary" type="number" min="0" step="0.1" value="<%= profile.minimumSalary ?? '' %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold md:col-span-2">Preferred locations<input name="preferredLocations" value="<%= profile.preferredLocations.join(', ') %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold md:col-span-2">Target roles<input name="targetRoles" value="<%= profile.targetRoles.join(', ') %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="font-semibold md:col-span-2">Skills<textarea name="skills" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal"><%= profile.skills.join(', ') %></textarea></label>
+          <label class="font-semibold">Work modes<input name="preferredWorkModes" value="<%= profile.preferredWorkModes.join(', ') %>" placeholder="Remote, Hybrid" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          <label class="flex items-center gap-2 pt-6 font-semibold"><input type="checkbox" name="willingToRelocate" value="1" <%= profile.willingToRelocate ? 'checked' : '' %> /> Willing to relocate</label>
+          <label class="flex items-start gap-2 pt-6 font-semibold md:col-span-2"><input type="checkbox" name="aiProcessingConsent" value="1" <%= profile.aiProcessingConsent ? 'checked' : '' %> /> <span>Use AI-generated leftover answers on employer forms. Verified profile facts still fill locally. You review every draft and submit yourself. Paid-only in a future plan.</span></label>
+          <label class="flex items-start gap-2 font-semibold md:col-span-2"><input type="checkbox" name="reusableAnswerConsent" value="1" <%= profile.reusableAnswerConsent ? 'checked' : '' %> /> <span>Learn quietly from verified completed applications. Low-risk facts may be summarized for future use; consequential changes require review. You can disable learning for any individual application.</span></label>
+        </div>
+        <button class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white">Save candidate profile</button>
+      </form>
+
+      <div class="space-y-4">
+        <form method="POST" action="/copilot/settings" class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        <div><h2 class="text-lg font-bold">Safety and eligibility</h2><p class="text-sm text-slate-500">Every preparation request must pass these rules before any application page opens.</p></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <label class="flex items-center gap-2 font-semibold"><input type="checkbox" name="enabled" value="1" <%= settings.enabled ? 'checked' : '' %> /> Enable COPILOT preparation</label>
+            <label class="font-semibold">Mode<input readonly value="REVIEW ONLY" class="mt-1 w-full rounded-lg border bg-slate-50 px-3 py-2 font-normal text-slate-600" /></label>
+            <label class="font-semibold">Minimum match score<input name="minimumMatchScore" type="number" min="0" max="100" value="<%= settings.minimumMatchScore %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+            <label class="font-semibold">Max per day<input name="maxApplicationsPerDay" type="number" min="1" value="<%= settings.maxApplicationsPerDay %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+            <label class="font-semibold">Max per week<input name="maxApplicationsPerWeek" type="number" min="1" value="<%= settings.maxApplicationsPerWeek %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+            <label class="font-semibold">Minimum salary (LPA)<input name="minimumSalary" type="number" min="0" step="0.1" value="<%= settings.minimumSalary ?? '' %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+            <label class="font-semibold sm:col-span-2">Target roles<input name="targetRoles" value="<%= settings.targetRoles.join(', ') %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+            <label class="font-semibold sm:col-span-2">Preferred locations<input name="preferredLocations" value="<%= settings.preferredLocations.join(', ') %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+            <label class="font-semibold sm:col-span-2">Excluded companies<input name="excludedCompanies" value="<%= settings.excludedCompanies.join(', ') %>" class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+          </div>
+          <button class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white">Save safety settings</button>
+        </form>
+
+        <section class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+          <div><h2 class="text-lg font-bold">Upload master resume PDF</h2><p class="text-sm text-slate-500">Stored locally and text-extracted. Candidate facts are never overwritten automatically.</p></div>
+          <form id="resumeUploadForm" enctype="multipart/form-data" class="flex flex-wrap gap-2">
+            <input name="resume" type="file" accept="application/pdf" required class="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm" />
+            <button class="rounded-lg border border-accent px-4 py-2 text-sm font-semibold text-accent">Upload and inspect</button>
+          </form>
+          <p id="resumeUploadStatus" class="text-sm text-slate-500"></p>
+        </section>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <form method="POST" action="/copilot/jobs" class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+        <div><h2 class="text-lg font-bold">Add a job manually</h2><p class="text-sm text-slate-500">Paste real job details to test matching without scraping.</p></div>
+        <input name="company" required placeholder="Company" class="w-full rounded-lg border px-3 py-2 text-sm" />
+        <input name="title" required placeholder="Role title" class="w-full rounded-lg border px-3 py-2 text-sm" />
+        <input name="location" placeholder="Location" class="w-full rounded-lg border px-3 py-2 text-sm" />
+        <input name="url" type="url" required placeholder="https://company.example/job" class="w-full rounded-lg border px-3 py-2 text-sm" />
+        <div class="grid grid-cols-2 gap-2">
+          <label class="text-xs font-semibold text-slate-600">Posted date<input name="postedAt" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-normal" /></label>
+          <label class="text-xs font-semibold text-slate-600">Company score<input name="companyScore" type="number" min="0" max="100" step="0.1" placeholder="0–100 (or 0–5)" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm font-normal" /></label>
+        </div>
+        <div class="grid grid-cols-2 gap-2"><input name="salaryMin" type="number" step="0.1" placeholder="Min LPA" class="rounded-lg border px-3 py-2 text-sm" /><input name="salaryMax" type="number" step="0.1" placeholder="Max LPA" class="rounded-lg border px-3 py-2 text-sm" /></div>
+        <textarea name="description" required placeholder="Paste the complete job description" class="w-full rounded-lg border px-3 py-2 text-sm"></textarea>
+        <button class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white">Add to Pending</button>
+      </form>
+
+      <section class="rounded-xl border border-slate-200 bg-white p-5 xl:col-span-2">
+        <div class="mb-3"><h2 class="text-lg font-bold">Qualified jobs</h2><p class="text-sm text-slate-500">Only scored eligible and close matches, highest score first. Choose a resume style or leave the default, then preparation builds the PDF and continues automatically.</p></div>
+        <div class="max-h-[42rem] overflow-y-auto space-y-3">
+          <% if (!jobs.length) { %><p class="py-6 text-sm text-slate-500">No matched or close jobs yet.</p><% } %>
+          <% jobs.forEach(function(job) { %>
+            <article class="rounded-xl border border-slate-200 p-4 text-sm">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <details class="min-w-0 flex-1 group">
+                  <summary class="cursor-pointer list-none">
+                    <div class="flex items-start gap-2">
+                      <span class="mt-0.5 text-accent group-open:rotate-90">▶</span>
+                      <div>
+                        <strong class="text-base"><%= job.title %></strong>
+                        <% const jobTag = platformOf(job); %>
+                        <% const jobSupport = applySupportOf(job); %>
+                        <% if (jobTag) { %><span class="ml-1 align-middle text-[10px] px-1.5 py-0.5 rounded font-bold <%= platformBadgeClass(jobTag) %>"><%= jobTag.label %></span><% } %>
+                        <% if (jobSupport) { %><span class="ml-1 align-middle text-[10px] px-1.5 py-0.5 rounded font-bold <%= applySupportBadgeClass(jobSupport) %>" title="<%= jobSupport.reason %>"><%= jobSupport.label %></span><% } %>
+                        <div class="text-slate-500"><%= job.company_name %> · <span class="font-semibold text-accent">score <%= job.match_score %></span> · <%= job.status %></div>
+                        <div class="text-xs text-slate-400">Posted <%= job.posted_at ? formatDate(job.posted_at) : 'date unavailable' %> · Created <%= formatDate(job.created_at) %></div>
+                      </div>
+                    </div>
+                  </summary>
+                  <div class="mt-3 ml-6 space-y-2 rounded-lg bg-slate-50 p-3">
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                      <span>Location: <strong><%= job.location_label || job.location || 'Not stated' %></strong></span>
+                      <span>CTC: <strong><%= job.ctc_min_lpa ?? '?' %>–<%= job.ctc_max_lpa ?? '?' %> LPA</strong></span>
+                      <span>Company score: <strong><%= job.company_score != null ? job.company_score + '/100' : 'Not available' %></strong><%= job.company_score_source ? ' · ' + job.company_score_source : '' %></span>
+                      <% if (job.work_mode) { %><span>Mode: <strong><%= job.work_mode %></strong></span><% } %>
+                      <% if (job.yoe_min != null) { %><span>Experience: <strong><%= job.yoe_min %>+ years</strong></span><% } %>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-1">
+                      <section class="rounded-lg border border-slate-200 bg-white p-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                          <h4 class="font-bold">Computed fit decision</h4>
+                          <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase <%= job.analysis.recommendation === 'pursue' ? 'bg-emerald-100 text-emerald-800' : job.analysis.recommendation === 'skip' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900' %>"><%= job.analysis.recommendation || (job.status === 'MATCHED' ? 'pursue' : 'maybe') %></span>
+                        </div>
+                        <p class="mt-2 text-slate-700"><%= job.analysis.explanation || 'This job passed scoring, but no detailed explanation was stored.' %></p>
+                        <dl class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                          <div class="rounded bg-slate-50 p-2"><dt class="text-slate-500">Match score</dt><dd class="font-bold text-accent"><%= job.match_score %>/100</dd></div>
+                          <div class="rounded bg-slate-50 p-2"><dt class="text-slate-500">Pre-score</dt><dd class="font-bold"><%= job.pre_score != null && job.pre_score >= 0 ? job.pre_score + '/100' : 'Unavailable' %></dd></div>
+                          <div class="rounded bg-slate-50 p-2"><dt class="text-slate-500">Notice requirement</dt><dd class="font-bold"><%= job.notice_period_required || job.analysis.noticePeriodRequired || 'Not stated' %></dd></div>
+                          <div class="rounded bg-slate-50 p-2"><dt class="text-slate-500">Immediate joiner</dt><dd class="font-bold"><%= job.analysis.immediateJoiner === true ? 'Required' : job.analysis.immediateJoiner === false ? 'No' : 'Not stated' %></dd></div>
+                        </dl>
+                      </section>
+                      <section class="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+                        <div>
+                          <h4 class="text-xs font-bold uppercase tracking-wide text-emerald-700">Matched skills</h4>
+                          <div class="mt-1 flex flex-wrap gap-1"><% (job.analysis.matchedSkills || []).forEach(function(skill) { %><span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800"><%= skill %></span><% }) %><% if (!(job.analysis.matchedSkills || []).length) { %><span class="text-xs text-slate-500">No skill breakdown stored.</span><% } %></div>
+                        </div>
+                        <div>
+                          <h4 class="text-xs font-bold uppercase tracking-wide text-amber-700">Gaps to consider</h4>
+                          <div class="mt-1 flex flex-wrap gap-1"><% (job.analysis.missingSkills || []).forEach(function(skill) { %><span class="rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-900"><%= skill %></span><% }) %><% if (!(job.analysis.missingSkills || []).length) { %><span class="text-xs text-slate-500">No material gaps identified.</span><% } %></div>
+                        </div>
+                        <% if (job.tailored.resumeSummary) { %><div><h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Tailored resume focus</h4><p class="mt-1 text-xs text-slate-700"><%= job.tailored.resumeSummary %></p></div><% } %>
+                      </section>
+                    </div>
+                    <div class="flex flex-wrap gap-3 pt-1">
+                      <a href="<%= job.url %>" target="_blank" rel="noopener" class="font-semibold text-accent underline">Open original posting</a>
+                      <a href="/jobs/<%= job.id %>/resume-preview?panel=<%= job.status === 'CLOSE' ? 'close' : 'matches' %>&template=<%= job.resume_template || 'classic' %>" target="_blank" rel="noopener" data-resume-preview-link data-preview-base="/jobs/<%= job.id %>/resume-preview?panel=<%= job.status === 'CLOSE' ? 'close' : 'matches' %>" class="font-semibold text-accent underline">Preview resume</a>
+                      <a href="/?panel=<%= job.status === 'CLOSE' ? 'close' : 'matches' %>&job=<%= job.id %>#resume-editor" class="font-semibold text-accent underline">Edit tailored resume</a>
+                    </div>
+                  </div>
+                </details>
+                <form method="POST" action="<%= allowRealSubmission ? '/api/extension/jobs/' + job.id + '/prepare' : '/copilot/jobs/' + job.id + '/prepare' %>" <%= allowRealSubmission ? 'data-extension-prepare' : '' %> data-prepare-form class="flex flex-wrap items-end justify-end gap-2">
+                  <label class="text-xs font-semibold text-slate-600">Choose resume
+                    <select name="resumeTemplate" data-resume-select class="mt-1 block rounded-lg border px-3 py-2 text-sm font-normal">
+                      <% resumeTemplates.forEach(function(template) { %>
+                        <option value="<%= template.id %>" <%= (job.resume_template || 'classic') === template.id ? 'selected' : '' %>><%= template.name %><%= template.id === 'classic' ? ' (default)' : '' %></option>
+                      <% }) %>
+                    </select>
+                  </label>
+                  <button data-prepare-button class="rounded-lg bg-accent px-3 py-2 font-semibold text-white"><%= allowRealSubmission ? 'Build resume & open with extension' : 'Prepare test application' %></button>
+                </form>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    </section>
+
+    <section class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+      <div class="flex flex-wrap justify-between gap-2"><div><h2 class="text-lg font-bold">Applications</h2><p class="text-sm text-slate-500">Persistent state, questions, and recent events.</p></div><div class="flex gap-2"><a href="/outcomes" class="rounded-lg border border-accent px-3 py-2 text-sm font-semibold text-accent">Application outcomes</a><a href="/copilot" class="rounded-lg border px-3 py-2 text-sm font-semibold">Refresh status</a></div></div>
+      <% if (!applications.length) { %><p class="text-sm text-slate-500">No applications prepared yet.</p><% } %>
+      <div class="space-y-4">
+        <% applications.forEach(function(application) { %>
+          <article class="rounded-xl border border-slate-200 p-4" data-application-card data-application-id="<%= application.id %>">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div><h3 class="font-bold"><%= application.title %> · <%= application.company_name %></h3>
+                <% const appTag = platformOf({ source: application.job_source, url: application.job_url }); %>
+                <% const appSupport = applySupportOf({ source: application.job_source, url: application.job_url }); %>
+                <% if (appTag) { %><span class="inline-flex text-[10px] px-1.5 py-0.5 rounded font-bold <%= platformBadgeClass(appTag) %>"><%= appTag.label %></span><% } %>
+                <% if (appSupport) { %><span class="inline-flex text-[10px] px-1.5 py-0.5 rounded font-bold <%= applySupportBadgeClass(appSupport) %>" title="<%= appSupport.reason %>"><%= appSupport.label %></span><% } %>
+                <p class="text-xs text-slate-500"><%= application.adapter %> · <%= application.mode %> · started <%= formatDate(application.started_at) %></p></div>
+              <span data-application-status class="rounded-full px-3 py-1 text-xs font-bold <%= application.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-800' : application.status === 'WAITING_FOR_USER' ? 'bg-amber-100 text-amber-900' : ['FAILED','BLOCKED','PORTAL_CHANGED','USER_ACTION_REQUIRED'].includes(application.status) ? 'bg-red-100 text-red-800' : 'bg-slate-100' %>"><%= application.status %></span>
+            </div>
+            <% if (application.failure_reason) { %><p class="mt-2 rounded bg-red-50 p-2 text-sm text-red-800"><%= application.failure_reason %></p><% } %>
+            <% const pending = questionsByApplication[application.id] || []; %>
+            <% if (pending.length) { %>
+              <div class="mt-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <p class="text-sm font-semibold">Answer required — facts are never invented</p>
+                <% pending.forEach(function(question) { %>
+                  <% if (/consent|privacy|terms|declaration|certif|signature|authorize|agree.{0,25}(?:terms|policy)/i.test(question.question)) { %>
+                    <div class="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900"><strong>This requires your direct confirmation on the employer form.</strong><div class="mt-1"><%= question.question %></div></div>
+                  <% } else { %>
+                    <form method="POST" action="/copilot/applications/<%= application.id %>/questions/<%= question.id %>" class="flex flex-wrap items-end gap-2">
+                      <label class="min-w-[16rem] flex-1 text-sm font-semibold"><%= question.question %><input name="answer" required class="mt-1 w-full rounded-lg border px-3 py-2 font-normal" /></label>
+                      <button class="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white">Save answer</button>
+                    </form>
+                  <% } %>
+                <% }) %>
+              </div>
+            <% } %>
+            <% const resolvedAnswers = resolvedAnswersByApplication[application.id] || []; %>
+            <% if (resolvedAnswers.length) { %>
+              <details class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                <summary class="cursor-pointer font-semibold">Filled answers (<%= resolvedAnswers.length %>)</summary>
+                <div class="mt-2 space-y-2">
+                  <% resolvedAnswers.forEach(function(answer) { %>
+                    <div class="rounded-lg bg-white p-2">
+                      <div class="flex flex-wrap justify-between gap-2"><strong><%= answer.question %></strong><span class="text-xs text-slate-500"><%= answer.source || 'UNKNOWN' %> · <%= Math.round(Number(answer.confidence || 0) * 100) %>%</span></div>
+                      <p class="mt-1 whitespace-pre-wrap text-slate-700"><%= answer.answer %></p>
+                      <% if (answer.evidence) { %><p class="mt-1 text-xs text-slate-500"><%= answer.evidence %></p><% } %>
+                    </div>
+                  <% }) %>
+                </div>
+              </details>
+            <% } %>
+            <div class="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div class="text-xs text-slate-500 space-y-1"><strong class="text-slate-700">Recent events</strong><div data-live-event class="font-medium text-accent"></div><% (eventsByApplication[application.id] || []).forEach(function(event) { %><div><%= formatDate(event.created_at) %> · <strong><%= event.event_type %></strong> · <%= event.message %></div><% }) %></div>
+              <div class="flex flex-wrap items-end justify-end gap-2">
+                <% if (application.status === 'SUCCESS') { %><details class="rounded-lg border px-3 py-2 text-sm"><summary class="cursor-pointer font-semibold">Record outcome</summary><form method="POST" action="/applications/<%= application.id %>/outcomes" class="mt-2 grid gap-2"><select name="eventType" class="rounded border px-2 py-1"><option value="RECRUITER_RESPONSE">Recruiter response</option><option value="SCREENING_CALL">Screening call</option><option value="INTERVIEW">Interview stage</option><option value="REJECTED">Rejected</option><option value="OFFER">Offer</option><option value="WITHDRAWN">Withdrawn</option><option value="FOLLOW_UP_SENT">Follow-up sent</option></select><input name="note" maxlength="1000" placeholder="Optional note" class="rounded border px-2 py-1"><button class="rounded bg-accent px-3 py-2 font-semibold text-white">Save confirmed update</button></form></details><% } %>
+                <% if (application.adapter === 'EXTENSION') { %><a href="<%= application.job_url %>" target="_blank" rel="noopener" class="rounded-lg border px-3 py-2 text-sm font-semibold">Open application page</a><% } %>
+                <% if (application.adapter === 'EXTENSION') { %><a href="/extension-diagnostic?jobId=<%= application.job_id %>" target="_blank" rel="noopener" class="rounded-lg border px-3 py-2 text-sm font-semibold">Test autofill safely</a><% } %>
+                <% if (application.adapter === 'EXTENSION' && application.status !== 'SUCCESS') { %><form method="POST" action="/copilot/applications/<%= application.id %>/unlink" onsubmit="return confirm('Unlink COPILOT from this job session?');"><button class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">✕ Unlink session</button></form><% } %>
+                <% if (application.adapter === 'EXTENSION' && application.status !== 'SUCCESS' && ['MATCHED','CLOSE','APPROVED'].includes(application.job_status)) { %><details class="rounded-lg border px-3 py-2 text-sm"><summary class="cursor-pointer font-semibold">Advanced fallback</summary><form method="POST" action="/copilot/applications/<%= application.id %>/mark-filled" class="mt-2" onsubmit="return confirm('You are marking this form ready without automated validation. Confirm that you reviewed all required fields.');"><button class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">Mark as filled manually</button></form></details><% } %>
+                <% if (application.adapter !== 'EXTENSION' && application.status !== 'SUCCESS' && ['MATCHED','CLOSE','APPROVED'].includes(application.job_status)) { %><form method="POST" action="/copilot/applications/<%= application.id %>/retry"><button class="rounded-lg border px-3 py-2 text-sm font-semibold">Retry / continue</button></form><% } %>
+                <% if (!['MATCHED','CLOSE','APPROVED'].includes(application.job_status)) { %><span class="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-800">Application blocked: job is no longer eligible</span><% } %>
+                <% if (application.status === 'READY_TO_SUBMIT' && application.adapter === 'REAL_WEB') { %>
+                  <a href="<%= application.job_url %>" target="_blank" rel="noopener" class="rounded-lg border px-3 py-2 text-sm font-semibold">Open job site</a>
+                  <span class="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">Review the employer form and submit it yourself</span>
+                <% } else if (application.status === 'READY_TO_SUBMIT' && application.adapter === 'TEST_FORM') { %>
+                  <a href="/test-job-form?applicationId=<%= application.id %>" target="_blank" class="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white">Open test form for review</a>
+                <% } %>
+              </div>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+      <div><h2 class="text-lg font-bold">Reusable application answers</h2><p class="text-sm text-slate-500">Profile, resume-derived, and grounded AI answers that are safe to reuse. Review or edit them here; your edit becomes the answer for future jobs.</p></div>
+      <form method="POST" action="/copilot/answers" class="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <input name="questionKey" required placeholder="Question key, e.g. KAFKA_EXPERIENCE" class="rounded-lg border px-3 py-2 text-sm" />
+        <input name="originalQuestion" required placeholder="Original question" class="rounded-lg border px-3 py-2 text-sm" />
+        <input name="answer" required placeholder="Verified answer" class="rounded-lg border px-3 py-2 text-sm" />
+        <button class="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white">Save reusable answer</button>
+      </form>
+      <% if (!answers.length) { %><p class="text-sm text-slate-500">No reusable answers yet. Grounded facts such as technology experience will appear here after preparation.</p><% } %>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <% answers.forEach(function(answer) { %>
+          <article class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+            <form method="POST" action="/copilot/answers/<%= answer.id %>" class="space-y-2">
+              <input type="hidden" name="questionKey" value="<%= answer.questionKey %>" />
+              <input type="hidden" name="originalQuestion" value="<%= answer.originalQuestion %>" />
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div><strong><%= answer.originalQuestion %></strong><div class="text-xs text-slate-500"><%= answer.questionKey %> · <%= answer.source %> · confidence <%= Math.round(Number(answer.confidence || 0) * 100) %>%</div></div>
+                <button class="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white">Save edit</button>
+              </div>
+              <textarea name="answer" required class="min-h-[4rem] w-full rounded-lg border px-3 py-2"><%= answer.answer %></textarea>
+              <% if (answer.evidence) { %><details class="text-xs text-slate-600"><summary class="cursor-pointer font-semibold">Why this answer</summary><p class="mt-1"><%= answer.evidence %></p></details><% } %>
+            </form>
+            <form method="POST" action="/copilot/answers/<%= answer.id %>/delete" class="mt-2 text-right"><button class="text-xs font-semibold text-red-700 underline">Delete answer</button></form>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  </main>
+  <script>
+    document.getElementById("resumeUploadForm")?.addEventListener("submit", async function(event) {
+      event.preventDefault();
+      var status = document.getElementById("resumeUploadStatus");
+      status.textContent = "Uploading and extracting selectable PDF text...";
+      try {
+        var response = await fetch("/api/resume", { method: "POST", body: new FormData(event.currentTarget) });
+        var result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Upload failed");
+        status.textContent = result.message + " Pages: " + result.pageCount + "; extracted characters: " + result.textLength + ".";
+      } catch (error) { status.textContent = error.message; }
+    });
+    document.querySelectorAll("[data-prepare-form]").forEach(function(form) {
+      var select = form.querySelector("[data-resume-select]");
+      var card = form.closest("article");
+      var previewLink = card?.querySelector("[data-resume-preview-link]");
+      var updatePreviewLink = function() {
+        if (!select || !previewLink) return;
+        previewLink.href = previewLink.dataset.previewBase + "&template=" + encodeURIComponent(select.value || "classic");
+      };
+      select?.addEventListener("change", updatePreviewLink);
+      updatePreviewLink();
+      form.addEventListener("submit", async function(event) {
+        var button = form.querySelector("[data-prepare-button]");
+        if (!button) return;
+        var extensionPrepare = form.hasAttribute("data-extension-prepare");
+        if (extensionPrepare) {
+          event.preventDefault();
+        }
+        button.disabled = true;
+        button.textContent = "Building resume & preparing…";
+        button.classList.add("opacity-70", "cursor-wait");
+        if (extensionPrepare) {
+          try {
+            var response = await fetch(form.action, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams(new FormData(form)).toString()
+            });
+            var result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Application preparation failed.");
+            button.textContent = "Opening in current browser…";
+            document.dispatchEvent(new CustomEvent("job-hunter-open-application", { detail: { jobId: result.jobId, url: result.jobUrl } }));
+            window.setTimeout(function() {
+              button.disabled = false;
+              button.textContent = "Build resume & open with extension";
+              button.classList.remove("opacity-70", "cursor-wait");
+            }, 1500);
+          } catch (error) {
+            button.disabled = false;
+            button.textContent = "Build resume & open with extension";
+            button.classList.remove("opacity-70", "cursor-wait");
+            window.alert(error.message);
+          }
+        }
+      });
+    });
+    var applicationCards = Array.from(document.querySelectorAll("[data-application-card]"));
+    function statusClasses(status) {
+      if (status === "SUCCESS") return "bg-emerald-100 text-emerald-800";
+      if (status === "WAITING_FOR_USER") return "bg-amber-100 text-amber-900";
+      if (["FAILED", "BLOCKED", "PORTAL_CHANGED", "USER_ACTION_REQUIRED"].includes(status)) return "bg-red-100 text-red-800";
+      if (status === "READY_TO_SUBMIT") return "bg-teal-100 text-teal-900";
+      return "bg-slate-100";
+    }
+    async function refreshApplicationProgress() {
+      if (document.hidden || !applicationCards.length) return;
+      await Promise.all(applicationCards.map(async function(card) {
+        try {
+          var response = await fetch("/api/applications/" + encodeURIComponent(card.dataset.applicationId));
+          if (!response.ok) return;
+          var result = await response.json();
+          var badge = card.querySelector("[data-application-status]");
+          if (badge) {
+            badge.textContent = result.application.status;
+            badge.className = "rounded-full px-3 py-1 text-xs font-bold " + statusClasses(result.application.status);
+          }
+          var latest = result.events && result.events[result.events.length - 1];
+          var live = card.querySelector("[data-live-event]");
+          if (live && latest) live.textContent = "Live: " + latest.event_type + " · " + latest.message;
+        } catch (_) {}
+      }));
+    }
+    window.setInterval(refreshApplicationProgress, 3000);
+    refreshApplicationProgress();
+  </script>
+</body>
+</html>

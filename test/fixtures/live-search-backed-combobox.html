@@ -1,0 +1,59 @@
+<!doctype html>
+<html><body><form>
+  <label>First name<input name="first_name" autocomplete="given-name"></label>
+  <label>Email<input name="email" type="email" autocomplete="email"></label>
+  <label>Phone<input name="phone" type="tel" autocomplete="tel"></label>
+  <label id="city-label">City*</label>
+  <div data-select-root><div class="select__control"><div class="select__value-container"><div class="select__input-container">
+    <input id="city-search" class="select__input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-labelledby="city-label" aria-required="true" autocomplete="off">
+  </div></div></div></div>
+  <script>
+    const input = document.getElementById("city-search");
+    const root = input.closest("[data-select-root]");
+    const listId = "react-select-city-search-listbox";
+    let renderTimer = 0;
+    const close = () => {
+      document.getElementById(listId)?.remove();
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-controls");
+    };
+    const choose = (value) => {
+      root.querySelector(".select__single-value")?.remove();
+      const selected = document.createElement("div");
+      selected.className = "select__single-value";
+      selected.textContent = value;
+      root.querySelector(".select__value-container").prepend(selected);
+      input.value = "";
+      close();
+    };
+    const render = () => {
+      document.getElementById(listId)?.remove();
+      const query = input.value.trim().toLowerCase();
+      if (query.length < 3) return;
+      const values = query.startsWith("gur")
+        ? ["Gurugram, Haryana, India", "Gurugram, Uttar Pradesh, India"]
+        : query.startsWith("ben") ? ["Bengaluru, Karnataka, India"] : [];
+      if (!values.length) return;
+      const list = document.createElement("div");
+      list.id = listId;
+      list.setAttribute("role", "listbox");
+      values.forEach((value, index) => {
+        const option = document.createElement("div");
+        option.id = "react-select-city-search-option-" + index;
+        option.setAttribute("role", "option");
+        option.textContent = value;
+        option.addEventListener("mousedown", (event) => { event.preventDefault(); choose(value); });
+        list.appendChild(option);
+      });
+      document.body.appendChild(list);
+      input.setAttribute("aria-controls", listId);
+      input.setAttribute("aria-expanded", "true");
+    };
+    input.addEventListener("input", () => {
+      input.dataset.inputEvents = String(Number(input.dataset.inputEvents || 0) + 1);
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(render, 90);
+    });
+    input.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
+  </script>
+</form></body></html>

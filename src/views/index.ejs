@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Hunter Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#102a43",
+            panel: "#f5f7fa",
+            accent: "#0f766e",
+            warn: "#b45309"
+          },
+          fontFamily: {
+            display: ["\"IBM Plex Sans\"", "ui-sans-serif", "system-ui", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; }
+    textarea { min-height: 8rem; }
+  </style>
+</head>
+<body class="bg-slate-100 text-ink min-h-screen">
+  <%- include('partials/header') %>
+
+  <% if (error) { %>
+    <div class="max-w-[1600px] mx-auto px-4 pt-4">
+      <div class="rounded-lg border border-red-200 bg-red-50 text-red-800 px-4 py-3 text-sm"><%= error %></div>
+    </div>
+  <% } %>
+  <% if (success) { %>
+    <div class="max-w-[1600px] mx-auto px-4 pt-4">
+      <div class="rounded-lg border border-teal-200 bg-teal-50 text-teal-900 px-4 py-3 text-sm"><%= success %></div>
+    </div>
+  <% } %>
+
+  <% if (panel === 'overview') { %>
+    <div class="max-w-[1600px] mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <% if (!onboarding.complete) { %>
+        <a href="/onboarding" class="md:col-span-3 group rounded-xl border border-teal-200 bg-teal-50 p-4 hover:border-accent">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wide text-accent">Finish setup · <%= onboarding.completed %>/<%= onboarding.total %></p>
+              <h2 class="mt-1 font-semibold"><%= onboarding.next ? onboarding.next.label : 'Review setup' %></h2>
+              <p class="mt-1 text-sm text-slate-600">Your progress is saved locally, so you can leave and continue later.</p>
+            </div>
+            <div class="min-w-52 flex-1 md:max-w-sm">
+              <div class="h-2 overflow-hidden rounded-full bg-teal-100"><div class="h-full rounded-full bg-accent" style="width:<%= onboarding.percent %>%"></div></div>
+              <p class="mt-2 text-right text-xs font-bold text-accent group-hover:underline">Continue onboarding →</p>
+            </div>
+          </div>
+        </a>
+      <% } %>
+      <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold mb-3">Today’s action queue</h2>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <a href="/?panel=pending" class="rounded-lg bg-slate-50 p-3 hover:bg-slate-100"><strong class="block text-xl text-accent"><%= overview.actions.pending %></strong>Pending scores</a>
+          <a href="/?panel=matches" class="rounded-lg bg-slate-50 p-3 hover:bg-slate-100"><strong class="block text-xl text-accent"><%= overview.actions.matched %></strong>Review matches</a>
+          <a href="/?panel=tracker" class="rounded-lg bg-slate-50 p-3 hover:bg-slate-100"><strong class="block text-xl text-accent"><%= overview.actions.readyToApply %></strong>Ready to apply</a>
+          <a href="/?panel=tracker" class="rounded-lg bg-amber-50 p-3 hover:bg-amber-100"><strong class="block text-xl text-amber-800"><%= overview.actions.followUpDue %></strong>Follow-ups due</a>
+        </div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 md:col-span-2">
+        <h2 class="font-semibold mb-1">Find and process jobs</h2>
+        <p class="text-xs text-slate-500 mb-4">Choose how many records to score (1–100). Search balances fresh jobs across sources; exact repeats are not rescored unless materially better details are discovered.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form method="POST" action="/pipeline/process-pending" class="rounded-xl border border-slate-200 p-3 space-y-3">
+            <div>
+              <label for="pendingLimit" class="block text-sm font-semibold">Process pending records</label>
+              <p class="text-xs text-slate-500">Scores the freshest existing pending jobs first.</p>
+            </div>
+            <div class="flex gap-2">
+              <input id="pendingLimit" name="limit" type="number" min="1" max="100" step="1" value="10" required
+                class="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm" aria-label="Number of pending records to process" />
+              <button data-pipeline-loader data-loading-label="Processing pending jobs..."
+                class="flex-1 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-teal-800">Process pending</button>
+            </div>
+          </form>
+          <form method="POST" action="/pipeline/search-and-process" class="rounded-xl border border-teal-200 bg-teal-50/40 p-3 space-y-3">
+            <div>
+              <label for="searchLimit" class="block text-sm font-semibold">Search new jobs + process</label>
+              <p class="text-xs text-slate-500">Runs enabled sources concurrently, then allocates this score budget using recency, unique yield, compatibility, and a fair exploration share.</p>
+            </div>
+            <div class="flex gap-2">
+              <input id="searchLimit" name="limit" type="number" min="1" max="100" step="1" value="10" required
+                class="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm" aria-label="Number of newly found records to process" />
+              <button data-pipeline-loader data-loading-label="Searching and processing jobs..."
+                data-confirm-message="Search all enabled job sources and process newly added jobs now? This can take several minutes and may use OpenAI credits."
+                class="flex-1 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-teal-800">Search + process</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold mb-3">Pipeline</h2>
+        <ul class="text-sm space-y-1 text-slate-700">
+          <li>Matches (80+): <strong><%= counts.matches %></strong></li>
+          <li>Close (70–79): <strong><%= counts.close %></strong></li>
+          <li>Pending: <strong><%= counts.pending %></strong></li>
+          <li>Discarded: <strong><%= counts.discarded %></strong></li>
+          <li>Applied: <strong><%= counts.applied %></strong></li>
+          <li>Follow-ups due: <strong><%= counts.followUpDue %></strong></li>
+          <li>Archived: <strong><%= counts.archived %></strong></li>
+        </ul>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold mb-3">Last 7 days</h2>
+        <div class="grid grid-cols-3 gap-2 text-center text-sm">
+          <div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl"><%= overview.lastSevenDays.added %></strong>Added</div>
+          <div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl"><%= overview.lastSevenDays.matches %></strong>Matched</div>
+          <div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl"><%= overview.lastSevenDays.applied %></strong>Applied</div>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-400">Matched is the current outcome of jobs created in this period.</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold mb-3">System health</h2>
+        <ul class="space-y-2 text-sm">
+          <li class="flex justify-between"><span>OpenAI scoring</span><strong class="<%= overview.health.openai ? 'text-emerald-700' : 'text-red-700' %>"><%= overview.health.openai ? 'Configured' : 'Missing key' %></strong></li>
+          <li class="flex justify-between"><span>Hunter recruiters</span><strong class="<%= overview.health.hunter ? 'text-emerald-700' : 'text-amber-700' %>"><%= overview.health.hunter ? 'Configured' : 'Optional / off' %></strong></li>
+          <li class="flex justify-between"><span>Enabled search sources</span><strong><%= overview.health.searchSources %></strong></li>
+        </ul>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 md:col-span-2">
+        <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="font-semibold">Balanced source yield · 30 days</h2><p class="mt-1 text-xs text-slate-500">Every source receives exploration capacity; the remaining quota follows recent fresh, compatible-job yield.</p></div><span class="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800">Recommend <%= overview.ingestion.recommendation.fetchPerDay %> fetched / <%= overview.ingestion.recommendation.processPerDay %> scored daily</span></div>
+        <% if (overview.ingestion.sources.length) { %><div class="mt-4 overflow-x-auto"><table class="w-full text-left text-xs"><thead class="text-slate-500"><tr><th class="pb-2">Source</th><th class="pb-2">Fetched</th><th class="pb-2">New unique</th><th class="pb-2">Quota</th><th class="pb-2">Selected</th><th class="pb-2">Compatible</th><th class="pb-2">Unique yield</th><th class="pb-2">Compatible yield</th><th class="pb-2">Learned weight</th></tr></thead><tbody><% overview.ingestion.sources.forEach(function(source){ %><tr class="border-t border-slate-100"><th class="py-2"><%= source.source %></th><td><%= source.fetched %></td><td><%= source.inserted %></td><td><%= source.allocated %></td><td><%= source.selected %></td><td><%= source.matched + source.closeMatches %></td><td><%= source.uniqueYield %>%</td><td><%= source.compatibleYield %>%</td><td><%= source.averageWeight %>%</td></tr><% }) %></tbody></table></div><% } else { %><p class="mt-3 text-sm text-slate-500">Run Search + process once to establish source-yield baselines.</p><% } %>
+        <p class="mt-3 text-[11px] text-slate-400"><%= overview.ingestion.recommendation.scopeNote %></p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold">Scoring cost control · 30 days</h2><div class="mt-3 grid grid-cols-2 gap-2 text-sm"><div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl"><%= overview.matching.total %></strong>Scored</div><div class="rounded-lg bg-emerald-50 p-3"><strong class="block text-xl text-emerald-800"><%= overview.matching.aiAvoidanceRate ?? '—' %><%= overview.matching.aiAvoidanceRate == null ? '' : '%' %></strong>AI avoided</div><div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl"><%= overview.ai.calls %></strong>AI calls</div><div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl">$<%= overview.ai.estimatedCostUsd.toFixed(4) %></strong>Estimated AI cost</div><div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl"><%= overview.matching.aiEscalated %></strong>Match escalations</div><div class="rounded-lg bg-slate-50 p-3"><strong class="block text-xl"><%= overview.matching.averageConfidence ?? '—' %><%= overview.matching.averageConfidence == null ? '' : '%' %></strong>Mean confidence</div></div><p class="mt-3 text-xs text-slate-500">OpenAI is used only for uncertain middle-band matches; high-confidence matches and rejects stay deterministic. Cost is a token-price estimate, not an invoice.</p>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <h2 class="font-semibold mb-2">Naukri recency</h2>
+        <p class="text-sm text-slate-600 mb-3">
+          <% if (naukri.lastRefresh) { %>
+            Last marked refresh: <%= naukri.daysAgo %> day(s) ago.
+          <% } else { %>
+            Never marked. Refresh your Naukri profile, then record it here.
+          <% } %>
+          <% if (naukri.stale) { %><span class="text-amber-800 font-medium"> Due for a refresh.</span><% } %>
+        </p>
+        <button id="openNaukriAssist" type="button"
+          class="rounded-lg bg-accent text-white px-3 py-2 text-sm font-semibold hover:bg-teal-800">
+          Assisted Naukri refresh
+        </button>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-600">
+        <h2 class="font-semibold text-ink mb-2">Notes</h2>
+        <p>Sending stays manual. Gmail compose / mailto never auto-sends. Greenhouse keeps India locations only. <code>CANDIDATE_NOTICE_DAYS=0</code> means notice is not used as a filter. Edit the master resume (skills, keywords, bullets) in the <a class="text-accent underline" href="/resume">Resume</a> tab to raise match rate.</p>
+      </div>
+    </div>
+  <% } else { %>
+  <div class="max-w-[1600px] mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[calc(100vh-6rem)]">
+    <aside class="lg:col-span-4 xl:col-span-3 bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col">
+      <div class="px-4 py-3 border-b border-slate-200 bg-panel">
+        <h2 class="font-semibold text-sm uppercase tracking-wide text-slate-600">
+          <%= panel === 'matches' ? 'Matched jobs' : panel === 'close' ? 'Close matches (70–79)' : panel === 'discarded' ? 'Discarded / prefiltered' : panel === 'pending' ? 'Awaiting score' : panel === 'archived' ? 'Archived jobs' : 'Application tracker' %>
+        </h2>
+        <details class="mt-2 text-xs">
+          <summary class="cursor-pointer font-semibold text-accent">Filter and sort</summary>
+          <form method="GET" action="/" class="mt-2 grid grid-cols-2 gap-2">
+            <input type="hidden" name="panel" value="<%= panel %>" />
+            <label class="font-semibold">Sort by
+              <select name="sort" class="mt-1 w-full rounded border px-2 py-1.5 font-normal">
+                <option value="score" <%= filters.sortBy === 'score' ? 'selected' : '' %>>Match score</option>
+                <option value="created" <%= filters.sortBy === 'created' ? 'selected' : '' %>>Created date</option>
+                <option value="posted" <%= filters.sortBy === 'posted' ? 'selected' : '' %>>Posted date</option>
+                <option value="ctc" <%= filters.sortBy === 'ctc' ? 'selected' : '' %>>CTC</option>
+                <option value="companyScore" <%= filters.sortBy === 'companyScore' ? 'selected' : '' %>>Company score</option>
+              </select>
+            </label>
+            <label class="font-semibold">Direction
+              <select name="direction" class="mt-1 w-full rounded border px-2 py-1.5 font-normal">
+                <option value="desc" <%= filters.direction === 'desc' ? 'selected' : '' %>>Highest / newest</option>
+                <option value="asc" <%= filters.direction === 'asc' ? 'selected' : '' %>>Lowest / oldest</option>
+              </select>
+            </label>
+            <label class="font-semibold">Minimum score<input name="minScore" type="number" min="-1" max="100" value="<%= filters.minScore ?? '' %>" class="mt-1 w-full rounded border px-2 py-1.5 font-normal" /></label>
+            <label class="font-semibold">Minimum CTC<input name="minCtc" type="number" min="0" step="0.1" value="<%= filters.minCtc ?? '' %>" class="mt-1 w-full rounded border px-2 py-1.5 font-normal" /></label>
+            <label class="font-semibold">Created after<input name="createdFrom" type="date" value="<%= filters.createdFrom %>" class="mt-1 w-full rounded border px-2 py-1.5 font-normal" /></label>
+            <label class="font-semibold">Posted after<input name="postedFrom" type="date" value="<%= filters.postedFrom %>" class="mt-1 w-full rounded border px-2 py-1.5 font-normal" /></label>
+            <label class="col-span-2 font-semibold">Minimum company score<input name="minCompanyScore" type="number" min="0" max="100" step="0.1" value="<%= filters.minCompanyScore ?? '' %>" class="mt-1 w-full rounded border px-2 py-1.5 font-normal" /></label>
+            <button class="rounded bg-accent px-3 py-2 font-semibold text-white">Apply filters</button>
+            <a href="/?panel=<%= panel %>" class="rounded border bg-white px-3 py-2 text-center font-semibold">Reset</a>
+          </form>
+        </details>
+      </div>
+      <div class="overflow-y-auto flex-1">
+        <% if (!jobs.length) { %>
+          <div class="p-6 text-sm text-slate-500">
+            Nothing in this panel. Use <a class="text-accent underline" href="/?panel=overview">Overview</a> to search for jobs or process pending records.
+          </div>
+        <% } %>
+        <% jobs.forEach(function(job) { %>
+          <a href="/?panel=<%= panel %>&<%= filterQuery %>&job=<%= job.id %>"
+             class="block px-4 py-3 border-b border-slate-100 hover:bg-slate-50 <%= selected && selected.id === job.id ? 'bg-teal-50 border-l-4 border-l-accent' : '' %>">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-semibold text-sm truncate"><%= job.title %></div>
+                <div class="text-xs text-slate-500 truncate"><%= job.company_name || 'Unknown' %> · <%= job.location_label || job.location || '—' %></div>
+                <% const listPlatform = platformOf(job); %>
+                <% const listSupport = applySupportOf(job); %>
+                <% if (listPlatform) { %>
+                  <span class="inline-flex items-center gap-1 mt-0.5 text-[10px] px-1.5 py-0.5 rounded font-bold <%= platformBadgeClass(listPlatform) %>" title="<%= listSupport ? listSupport.reason : listPlatform.label + ' listing' %>"><%= listPlatform.label %></span>
+                <% } %>
+                <% if (listSupport) { %>
+                  <span class="inline-flex items-center gap-1 mt-0.5 text-[10px] px-1.5 py-0.5 rounded font-bold <%= applySupportBadgeClass(listSupport) %>" title="<%= listSupport.reason %>"><%= listSupport.label %></span>
+                <% } %>
+                <div class="text-[10px] text-slate-400 mt-0.5">Posted <%= job.posted_at ? formatCreatedAt(job.posted_at) : 'date unavailable' %></div>
+                <div class="text-[10px] text-slate-400">Created <%= formatCreatedAt(job.created_at) %></div>
+                <div class="text-[10px] text-slate-400">CTC <%= job.ctc_min_lpa ?? '?' %>–<%= job.ctc_max_lpa ?? '?' %> LPA · Company <%= job.company_score != null ? job.company_score + '/100' : 'not rated' %></div>
+                
+                <% if (job.posting_velocity_score != null) { %>
+                  <div class="text-[10px] mt-0.5 font-bold 
+                    <%= job.posting_velocity_score >= 70 ? 'text-green-600' : (job.posting_velocity_score >= 40 ? 'text-amber-600' : 'text-red-600') %>">
+                    Freshness: <%= job.posting_velocity_score %>/100
+                  </div>
+                <% } %>
+                <% if (panel === 'tracker' && job.follow_up_due) { %>
+                  <div class="text-[10px] text-amber-700 mt-0.5">Follow-up <%= job.follow_up_due %></div>
+                <% } %>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-sm font-bold text-accent"><%= job.match_score %></div>
+                <div class="text-[10px] uppercase tracking-wide text-slate-400"><%= job.status %></div>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </aside>
+
+    <main class="lg:col-span-8 xl:col-span-9 bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <% if (!selected) { %>
+        <div class="p-10 text-slate-500 text-sm">Select a job to review analysis and assets.</div>
+      <% } else { %>
+        <div class="px-5 py-4 border-b border-slate-200 bg-panel flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold"><%= selected.title %></h2>
+            <p class="text-sm text-slate-600">
+              <%= selected.company_name || 'Unknown company' %>
+              <% if (selected.company_domain) { %> · <%= selected.company_domain %><% } %>
+              · <%= selected.location || 'Location n/a' %>
+              · <span class="uppercase text-xs tracking-wide"><%= selected.source %></span>
+              <% if (selectedPlatform) { %><span class="inline-flex items-center ml-1 text-[10px] px-1.5 py-0.5 rounded font-bold <%= platformBadgeClass(selectedPlatform) %>"><%= selectedPlatform.label %></span><% } %>
+              <% if (selectedSupport) { %><span class="inline-flex items-center ml-1 text-[10px] px-1.5 py-0.5 rounded font-bold <%= applySupportBadgeClass(selectedSupport) %>" title="<%= selectedSupport.reason %>"><%= selectedSupport.label %></span><% } %>
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+              <form method="POST" action="/jobs/<%= selected.id %>/open-with-extension" class="inline-flex" data-open-with-extension data-job-url="<%= selected.url %>" onsubmit="return false;">
+                <input type="hidden" name="panel" value="<%= panel %>" />
+                <input type="hidden" name="job" value="<%= selected.id %>" />
+                <button type="button" class="inline-flex items-center justify-center rounded-lg bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-teal-800 transition">🚀 Open with Extension (Copilot)</button>
+              </form>
+              <form method="POST" class="flex gap-2">
+                <input type="hidden" name="panel" value="<%= panel %>" />
+                <button type="submit" formmethod="POST" formaction="/jobs/<%= selected.id %>/build-resume" class="inline-flex items-center justify-center rounded-lg border border-accent text-accent px-4 py-2 text-sm font-semibold hover:bg-teal-50">Build resume</button>
+                <button type="submit" formmethod="POST" formaction="/jobs/<%= selected.id %>/build-resume?preview=1" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">Preview resume</button>
+              </form>
+            </div>
+            <% if (selectedSupport && selectedSupport.mode !== 'AUTOFILL') { %>
+              <div class="mt-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                <strong><%= selectedSupport.title %></strong> — <%= selectedSupport.reason %>
+              </div>
+            <% } %>
+            <div class="mt-1 text-xs text-slate-500">Posted <%= selected.posted_at ? formatCreatedAt(selected.posted_at) : 'date unavailable' %> · Created <%= formatCreatedAt(selected.created_at) %></div>
+            <div class="mt-1 text-xs text-slate-500">Company score <%= selected.company_score != null ? selected.company_score + '/100' : 'not available' %><%= selected.company_score_source ? ' · source: ' + selected.company_score_source : '' %></div>
+            <div class="mt-2 flex flex-wrap gap-1">
+              <% if (tags && tags.locationLabel) { %><span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100"><%= tags.locationLabel %></span><% } %>
+              <% if (tags && tags.workMode && tags.workMode !== 'unstated') { %><span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100"><%= tags.workMode %></span><% } %>
+              <% if (tags && tags.yoeMin != null) { %><span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100"><%= tags.yoeMin %>+ YOE</span><% } %>
+              <% if (tags && (tags.ctcMinLpa || tags.ctcMaxLpa)) { %>
+                <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100">
+                  <%= tags.ctcMinLpa || '?' %>–<%= tags.ctcMaxLpa || '?' %> LPA
+                </span>
+              <% } %>
+              <% if (tags && tags.hasEsops) { %><span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800">ESOPs</span><% } %>
+              <% if (tags && tags.hasBond) { %><span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800">Bond</span><% } %>
+              <% if (selected.pre_score != null && selected.pre_score >= 0) { %><span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100">pre <%= selected.pre_score %></span><% } %>
+            </div>
+            <% if (tags && tags.salarySanity) { %>
+              <p class="mt-2 text-xs text-slate-500"><%= tags.salarySanity %></p>
+            <% } %>
+          </div>
+          <div class="text-right">
+            <div class="text-3xl font-bold text-accent"><%= selected.match_score %></div>
+            <div class="text-xs text-slate-500">match score</div>
+          </div>
+        </div>
+
+        <div class="p-5 grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <section class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-sm uppercase tracking-wide text-slate-500 mb-2">AI analysis</h3>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm space-y-2">
+                <p><%= analysis && analysis.explanation ? analysis.explanation : 'No analysis available.' %></p>
+                <% if (analysis && analysis.matchedSkills && analysis.matchedSkills.length) { %>
+                  <p><span class="font-medium">Matched:</span> <%= analysis.matchedSkills.join(', ') %></p>
+                <% } %>
+                <% if (analysis && analysis.missingSkills && analysis.missingSkills.length) { %>
+                  <p><span class="font-medium">Gaps:</span> <%= analysis.missingSkills.join(', ') %></p>
+                <% } %>
+                <% if (analysis && analysis.coachingNudges && analysis.coachingNudges.length) { %>
+                  <div class="mt-3 p-3 bg-indigo-50 text-indigo-900 border border-indigo-100 rounded-md">
+                    <span class="font-bold flex items-center gap-1 mb-1">💡 Coaching Nudges:</span>
+                    <ul class="list-disc pl-5 space-y-1">
+                      <% analysis.coachingNudges.forEach(nudge => { %>
+                        <li><%= nudge %></li>
+                      <% }) %>
+                    </ul>
+                  </div>
+                <% } %>
+                <p>
+                  <span class="font-medium">Notice required:</span>
+                  <%= selected.notice_period_required || (analysis && analysis.noticePeriodRequired) || 'Not stated' %>
+                  <% if (selected.notice_period_days != null || (analysis && analysis.noticePeriodRequiredDays != null)) { %>
+                    (<%= selected.notice_period_days != null ? selected.notice_period_days : analysis.noticePeriodRequiredDays %> days)
+                  <% } %>
+                  — not used as a filter while CANDIDATE_NOTICE_DAYS=0
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-sm uppercase tracking-wide text-slate-500 mb-2">Job description</h3>
+              <div class="rounded-lg border border-slate-200 p-3 text-sm max-h-80 overflow-y-auto whitespace-pre-wrap text-slate-700"><%= selected.description %></div>
+            </div>
+
+            <% if (outreach && outreach.length) { %>
+              <div>
+                <h3 class="font-semibold text-sm uppercase tracking-wide text-slate-500 mb-2">Recruiters</h3>
+                <div class="space-y-2">
+                  <% outreach.forEach(function(person) { %>
+                    <div class="rounded-lg border border-slate-200 p-3 text-sm">
+                      <div class="font-semibold"><%= person.recruiter_name || 'Unknown' %></div>
+                      <div class="text-slate-600"><%= person.recruiter_title || '' %></div>
+                      <div>
+                        <% if (person.recruiter_email) { %>
+                          <a class="text-accent underline" href="mailto:<%= person.recruiter_email %>"><%= person.recruiter_email %></a>
+                        <% } else { %>
+                          <span class="text-slate-400">No email</span>
+                        <% } %>
+                      </div>
+                      <% if (person.linkedin_url) { %>
+                        <a class="text-accent underline text-xs" href="<%= person.linkedin_url %>" target="_blank" rel="noopener">LinkedIn</a>
+                      <% } %>
+                    </div>
+                  <% }) %>
+                </div>
+              </div>
+            <% } %>
+          </section>
+
+          <section class="space-y-3">
+            <% if (selected.status === 'ARCHIVED') { %>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                Archived from <strong><%= selected.archived_from_status || 'an earlier status' %></strong><% if (selected.archived_at) { %> on <%= formatCreatedAt(selected.archived_at) %><% } %>.
+              </div>
+              <form method="POST" action="/jobs/<%= selected.id %>/restore">
+                <input type="hidden" name="panel" value="archived" />
+                <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">Restore archived job</button>
+              </form>
+            <% } %>
+            <% if (selected.status !== 'ARCHIVED') { %>
+            <% if (panel === 'discarded' || selected.status === 'PREFILTERED' || selected.status === 'REJECTED') { %>
+              <form method="POST" action="/jobs/<%= selected.id %>/restore">
+                <input type="hidden" name="panel" value="<%= panel %>" />
+                <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">Restore to pending</button>
+              </form>
+            <% } %>
+
+            <% if (missingCopy && missingCopy.length) { %>
+              <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 space-y-2">
+                <p>This job is missing: <strong><%= missingCopy.join(', ') %></strong>. Generate tailored copy from your master resume + this JD before you apply.</p>
+                <form method="POST" action="/jobs/<%= selected.id %>/generate-copy">
+                  <input type="hidden" name="panel" value="<%= panel %>" />
+                  <button data-tailoring-loader data-loading-label="Generating tailored copy..."
+                    class="rounded-lg bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-teal-800">
+                    Generate cover letter &amp; tailored copy
+                  </button>
+                </form>
+              </div>
+            <% } else { %>
+              <form method="POST" action="/jobs/<%= selected.id %>/generate-copy" class="flex flex-wrap items-center gap-2">
+                <input type="hidden" name="panel" value="<%= panel %>" />
+                <input type="hidden" name="overwrite" value="1" />
+                <button data-tailoring-loader data-loading-label="Regenerating tailored copy..."
+                  data-confirm-message="This will replace the current cover letter, resume summary, resume bullets, cold email, and LinkedIn notes. Continue?"
+                  class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">
+                  Regenerate tailored copy
+                </button>
+              </form>
+            <% } %>
+
+            <form id="resume-editor" method="POST" action="/jobs/<%= selected.id %>/approve" class="space-y-4 scroll-mt-4">
+              <input type="hidden" name="panel" value="<%= panel %>" />
+              <div>
+                <div class="mb-1 flex items-center justify-between gap-3">
+                  <label class="block text-sm font-semibold" for="coverLetter">Cover letter</label>
+                  <% if (selected.cover_letter) { %>
+                    <span class="flex flex-wrap justify-end gap-3">
+                      <button type="submit" formmethod="POST" formaction="/jobs/<%= selected.id %>/cover-letter.pdf"
+                        class="text-xs font-semibold text-accent underline">
+                        Download PDF
+                      </button>
+                      <button type="submit" formmethod="POST" formaction="/jobs/<%= selected.id %>/cover-letter.txt"
+                        class="text-xs font-semibold text-accent underline">
+                        Download TXT
+                      </button>
+                    </span>
+                  <% } %>
+                </div>
+                <textarea id="coverLetter" name="coverLetter"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"><%= selected.cover_letter || '' %></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-1" for="resumeSummary">Resume summary</label>
+                <textarea id="resumeSummary" name="resumeSummary"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"><%= mods && mods.resumeSummary ? mods.resumeSummary : '' %></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-1" for="modifiedBullets">Modified resume bullets (latest role, one per line)</label>
+                <textarea id="modifiedBullets" name="modifiedBullets"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"><%= mods && mods.modifiedBullets ? mods.modifiedBullets.join('\n') : '' %></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-1" for="extraSkills">Emphasize skills already on the resume (merged into skill groups, not printed as “gaps”)</label>
+                <input id="extraSkills" name="extraSkills" type="text"
+                  value="<%= mods && mods.extraSkills ? mods.extraSkills.join(', ') : '' %>"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-semibold mb-1" for="outreachEmail">Cold email draft</label>
+                  <textarea id="outreachEmail" name="outreachEmail"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"><%= mods && mods.outreachEmail ? mods.outreachEmail : '' %></textarea>
+                </div>
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1" for="linkedinOutreachNote">
+                      LinkedIn note — proof-first
+                      <span class="font-normal text-slate-500">(max 300)</span>
+                    </label>
+                    <textarea id="linkedinOutreachNote" name="linkedinOutreachNote" maxlength="300"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[6rem]"><%= mods && mods.linkedinOutreachNote ? mods.linkedinOutreachNote : '' %></textarea>
+                    <p class="mt-1 text-xs text-slate-500"><span id="linkedinCharCount"><%= mods && mods.linkedinOutreachNote ? mods.linkedinOutreachNote.length : 0 %></span>/300</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1" for="linkedinOutreachCuriosity">
+                      LinkedIn note — curiosity
+                      <span class="font-normal text-slate-500">(max 300)</span>
+                    </label>
+                    <textarea id="linkedinOutreachCuriosity" name="linkedinOutreachCuriosity" maxlength="300"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[6rem]"><%= mods && mods.linkedinOutreachCuriosity ? mods.linkedinOutreachCuriosity : '' %></textarea>
+                    <p class="mt-1 text-xs text-slate-500"><span id="linkedinCuriosityCount"><%= mods && mods.linkedinOutreachCuriosity ? mods.linkedinOutreachCuriosity.length : 0 %></span>/300</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-2">
+                <button type="submit"
+                  class="inline-flex items-center justify-center rounded-lg bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-teal-800 transition">
+                  Approve &amp; Build Assets
+                </button>
+                <% if (compose) { %>
+                  <a href="<%= compose.gmail %>" target="_blank" rel="noopener"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">
+                    Gmail compose
+                  </a>
+                  <a href="<%= compose.mailto %>"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">
+                    mailto
+                  </a>
+                <% } %>
+              </div>
+            </form>
+
+            <form method="POST" action="/jobs/<%= selected.id %>/applied" class="flex flex-wrap items-end gap-2">
+              <input type="hidden" name="panel" value="tracker" />
+              <div>
+                <label class="block text-xs font-semibold mb-1" for="referral_name">Referral (optional)</label>
+                <input id="referral_name" name="referral_name" type="text" value="<%= selected.referral_name || '' %>"
+                  class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <button class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">
+                Mark applied (+7 day follow-up)
+              </button>
+            </form>
+
+            <form method="POST" action="/jobs/<%= selected.id %>/archive">
+              <input type="hidden" name="panel" value="<%= panel %>" />
+              <button type="submit"
+                class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+                Archive
+              </button>
+            </form>
+            <% } %>
+          </section>
+        </div>
+      <% } %>
+    </main>
+  </div>
+  <% } %>
+  <% if (panel === 'overview') { %>
+  <div id="naukriAssistModal" hidden
+    class="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm items-center justify-center p-4"
+    role="dialog" aria-modal="true" aria-labelledby="naukriAssistTitle">
+    <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+        <div>
+          <h2 id="naukriAssistTitle" class="text-lg font-bold text-ink">Assisted Naukri profile refresh</h2>
+          <p class="mt-1 text-sm text-slate-500">Your Naukri login stays in your browser. This dashboard never receives your password.</p>
+        </div>
+        <button id="closeNaukriAssist" type="button" class="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="space-y-5 p-5">
+        <div class="rounded-xl border border-teal-200 bg-teal-50 p-4">
+          <p class="text-sm font-semibold text-teal-950">Step 1: Open your profile editor</p>
+          <a id="openNaukriProfile" href="<%= naukriAssist.editUrl %>" target="_blank" rel="noopener"
+            class="mt-2 inline-flex rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
+            Open Naukri Edit Profile
+          </a>
+        </div>
+
+        <div class="space-y-4">
+          <p class="text-sm font-semibold text-ink">Step 2: Review and copy useful profile content</p>
+          <div>
+            <div class="mb-1 flex items-center justify-between gap-2">
+              <label for="naukriHeadline" class="text-xs font-semibold text-slate-600">Suggested resume headline</label>
+              <button type="button" data-copy-target="naukriHeadline" class="text-xs font-semibold text-accent underline">Copy headline</button>
+            </div>
+            <textarea id="naukriHeadline" readonly class="w-full min-h-[5rem] rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm"><%= naukriAssist.headline %></textarea>
+          </div>
+          <div>
+            <div class="mb-1 flex items-center justify-between gap-2">
+              <label for="naukriSummary" class="text-xs font-semibold text-slate-600">Profile summary from your master resume</label>
+              <button type="button" data-copy-target="naukriSummary" class="text-xs font-semibold text-accent underline">Copy summary</button>
+            </div>
+            <textarea id="naukriSummary" readonly class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm"><%= naukriAssist.summary %></textarea>
+          </div>
+          <div>
+            <div class="mb-1 flex items-center justify-between gap-2">
+              <label for="naukriSkills" class="text-xs font-semibold text-slate-600">Suggested key skills</label>
+              <button type="button" data-copy-target="naukriSkills" class="text-xs font-semibold text-accent underline">Copy skills</button>
+            </div>
+            <textarea id="naukriSkills" readonly class="w-full min-h-[5rem] rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm"><%= naukriAssist.skills %></textarea>
+          </div>
+        </div>
+
+        <form method="POST" action="/settings/naukri-refresh" class="space-y-3">
+          <input type="hidden" name="panel" value="overview" />
+          <p class="text-sm font-semibold text-ink">Step 3: Complete the checklist in Naukri</p>
+          <div class="space-y-2 rounded-xl border border-slate-200 p-4 text-sm text-slate-700">
+            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1" /> <span>Review the headline, summary, and key skills.</span></label>
+            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1" /> <span>Check employment details and notice period (<strong><%= naukriAssist.noticePeriodDays %> days</strong> in the master resume).</span></label>
+            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1" /> <span>Upload your latest resume PDF if Naukri has an older copy.</span></label>
+            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1" /> <span>Review preferred roles, locations, and expected salary.</span></label>
+            <label class="mt-3 flex items-start gap-2 border-t border-slate-200 pt-3 font-semibold text-ink">
+              <input id="naukriSavedConfirmation" name="confirmed_saved" value="1" type="checkbox" class="mt-1" />
+              <span>I saved my changes successfully in Naukri.</span>
+            </label>
+          </div>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button id="cancelNaukriAssist" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button id="recordNaukriRefresh" disabled class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
+              Record confirmed refresh
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <% } %>
+  <div id="tailoringLoader" hidden
+    class="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm items-center justify-center p-4"
+    role="status" aria-live="polite" aria-label="Generating tailored application content">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
+      <div class="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-accent" aria-hidden="true"></div>
+      <p id="tailoringLoaderTitle" class="mt-4 font-semibold text-ink">Generating tailored copy...</p>
+      <p class="mt-1 text-sm text-slate-500">Analyzing the job and rewriting your application content. Please wait.</p>
+    </div>
+  </div>
+  <div id="pipelineLoader" hidden
+    class="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm items-center justify-center p-4"
+    role="status" aria-live="polite" aria-label="Processing jobs">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
+      <div class="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-slate-200 border-t-accent" aria-hidden="true"></div>
+      <p id="pipelineLoaderTitle" class="mt-4 font-semibold text-ink">Processing jobs...</p>
+      <p id="pipelineLoaderDetail" class="mt-1 text-sm text-slate-500">The run continues in the background. You can keep browsing.</p>
+      <button id="pipelineContinue" type="button" class="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Continue browsing</button>
+    </div>
+  </div>
+  <script>
+    (function () {
+      function bind(id, countId) {
+        var note = document.getElementById(id);
+        var count = document.getElementById(countId);
+        if (!note || !count) return;
+        function sync() { count.textContent = String(note.value.length); }
+        note.addEventListener("input", sync);
+        sync();
+      }
+      bind("linkedinOutreachNote", "linkedinCharCount");
+      bind("linkedinOutreachCuriosity", "linkedinCuriosityCount");
+
+      var loader = document.getElementById("tailoringLoader");
+      var loaderTitle = document.getElementById("tailoringLoaderTitle");
+      var pipelineLoader = document.getElementById("pipelineLoader");
+      var pipelineLoaderTitle = document.getElementById("pipelineLoaderTitle");
+      var pipelineLoaderDetail = document.getElementById("pipelineLoaderDetail");
+      var pipelineContinue = document.getElementById("pipelineContinue");
+
+      if (pipelineContinue) pipelineContinue.addEventListener("click", function () {
+        if (pipelineLoader) { pipelineLoader.hidden = true; pipelineLoader.classList.remove("flex"); }
+        document.body.classList.remove("overflow-hidden");
+      });
+
+      document.addEventListener("submit", function (event) {
+        var submitter = event.submitter;
+        var isTailoring = submitter && submitter.hasAttribute("data-tailoring-loader");
+        var isPipeline = submitter && submitter.hasAttribute("data-pipeline-loader");
+        if (!isTailoring && !isPipeline) return;
+        var form = event.target;
+        if (form.dataset.longTaskSubmitting === "1") return;
+
+        event.preventDefault();
+        var confirmation = submitter.getAttribute("data-confirm-message");
+        if (confirmation && !window.confirm(confirmation)) return;
+
+        form.dataset.longTaskSubmitting = "1";
+        submitter.dataset.originalLabel = submitter.textContent.trim();
+        var loadingLabel = submitter.getAttribute("data-loading-label") || "Generating tailored copy...";
+        submitter.textContent = loadingLabel;
+        submitter.setAttribute("aria-busy", "true");
+        submitter.classList.add("pointer-events-none", "opacity-70");
+        var activeLoader = isPipeline ? pipelineLoader : loader;
+        var activeTitle = isPipeline ? pipelineLoaderTitle : loaderTitle;
+        if (activeTitle) activeTitle.textContent = loadingLabel;
+        if (activeLoader) {
+          activeLoader.hidden = false;
+          activeLoader.classList.add("flex");
+        }
+        document.body.classList.add("overflow-hidden");
+
+        if (isPipeline) {
+          var kind = form.action.indexOf("search-and-process") >= 0 ? "SEARCH" : "PENDING";
+          var limit = form.querySelector("input[name=limit]").value;
+          fetch("/api/pipeline/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: kind, limit: limit }) })
+            .then(function (response) { return response.json().then(function (body) { if (!response.ok) throw new Error(body.error || "Pipeline could not start."); return body; }); })
+            .then(function poll(run) {
+              if (pipelineLoaderDetail) pipelineLoaderDetail.textContent = run.status === "RUNNING" ? "Running in the background. You can keep browsing." : "Run finished. Refreshing results…";
+              if (run.status === "COMPLETE") return window.location.assign("/?panel=overview&success=" + encodeURIComponent("Pipeline run complete."));
+              if (run.status === "FAILED") throw new Error(run.error || "Pipeline run failed.");
+              window.setTimeout(function () { fetch("/api/pipeline/run").then(function (response) { return response.json(); }).then(poll).catch(showPipelineError); }, 1500);
+            }).catch(showPipelineError);
+          return;
+        }
+        window.setTimeout(function () { form.requestSubmit(submitter); }, 80);
+      });
+
+      function showPipelineError(error) {
+        if (pipelineLoaderTitle) pipelineLoaderTitle.textContent = "Run stopped";
+        if (pipelineLoaderDetail) pipelineLoaderDetail.textContent = error.message || "Pipeline run failed.";
+        if (pipelineContinue) pipelineContinue.textContent = "Close";
+      }
+
+      window.addEventListener("pageshow", function () {
+        document.querySelectorAll("form[data-long-task-submitting]").forEach(function (form) {
+          delete form.dataset.longTaskSubmitting;
+        });
+        document.querySelectorAll("[data-tailoring-loader], [data-pipeline-loader]").forEach(function (button) {
+          if (button.dataset.originalLabel) button.textContent = button.dataset.originalLabel;
+          button.removeAttribute("aria-busy");
+          button.classList.remove("pointer-events-none", "opacity-70");
+        });
+        if (loader) {
+          loader.hidden = true;
+          loader.classList.remove("flex");
+        }
+        if (pipelineLoader) {
+          pipelineLoader.hidden = true;
+          pipelineLoader.classList.remove("flex");
+        }
+        document.body.classList.remove("overflow-hidden");
+      });
+
+      var naukriModal = document.getElementById("naukriAssistModal");
+      var openNaukriAssist = document.getElementById("openNaukriAssist");
+      var closeNaukriAssist = document.getElementById("closeNaukriAssist");
+      var cancelNaukriAssist = document.getElementById("cancelNaukriAssist");
+      var savedConfirmation = document.getElementById("naukriSavedConfirmation");
+      var recordRefresh = document.getElementById("recordNaukriRefresh");
+
+      function setNaukriModal(open) {
+        if (!naukriModal) return;
+        naukriModal.hidden = !open;
+        naukriModal.classList.toggle("flex", open);
+        document.body.classList.toggle("overflow-hidden", open);
+        if (open && closeNaukriAssist) closeNaukriAssist.focus();
+        if (!open && openNaukriAssist) openNaukriAssist.focus();
+      }
+      if (openNaukriAssist) openNaukriAssist.addEventListener("click", function () { setNaukriModal(true); });
+      if (closeNaukriAssist) closeNaukriAssist.addEventListener("click", function () { setNaukriModal(false); });
+      if (cancelNaukriAssist) cancelNaukriAssist.addEventListener("click", function () { setNaukriModal(false); });
+      if (naukriModal) naukriModal.addEventListener("click", function (event) {
+        if (event.target === naukriModal) setNaukriModal(false);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && naukriModal && !naukriModal.hidden) setNaukriModal(false);
+      });
+      if (savedConfirmation && recordRefresh) {
+        savedConfirmation.addEventListener("change", function () {
+          recordRefresh.disabled = !savedConfirmation.checked;
+        });
+      }
+
+      document.querySelectorAll("form[data-open-with-extension] button").forEach(function (button) {
+        button.addEventListener("click", function () {
+          if (globalThis.chrome && chrome.runtime && chrome.runtime.id) return;
+          alert("Reload the Job Hunter COPILOT unpacked extension, then click Open with Extension again. The application opens in a grouped tab, not over this dashboard.");
+        });
+      });
+
+      document.querySelectorAll("[data-copy-target]").forEach(function (button) {
+        button.addEventListener("click", async function () {
+          var target = document.getElementById(button.getAttribute("data-copy-target"));
+          if (!target) return;
+          var original = button.textContent;
+          try {
+            await navigator.clipboard.writeText(target.value);
+          } catch (_error) {
+            target.focus();
+            target.select();
+            document.execCommand("copy");
+          }
+          button.textContent = "Copied";
+          window.setTimeout(function () { button.textContent = original; }, 1400);
+        });
+      });
+
+    })();
+  </script>
+</body>
+</html>

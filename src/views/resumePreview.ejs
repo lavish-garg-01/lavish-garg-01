@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume preview — Job Hunter Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { ink: "#102a43", panel: "#f5f7fa", accent: "#0f766e" }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; }
+    .template-choice:checked + .template-card {
+      border-color: #0f766e;
+      box-shadow: 0 0 0 2px #0f766e;
+      background: #f0fdfa;
+    }
+    .template-choice:focus-visible + .template-card {
+      outline: 3px solid rgba(13, 148, 136, 0.35);
+      outline-offset: 3px;
+    }
+    .preview-sheet {
+      position: relative;
+      width: min(100%, 794px);
+      aspect-ratio: 210 / 297;
+      overflow: hidden;
+      background: white;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+    }
+    .preview-sheet iframe {
+      display: block;
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 794px;
+      height: 1123px;
+      border: 0;
+      background: white;
+      transform-origin: top left;
+    }
+    .score-ring {
+      --score: 0;
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 104px;
+      height: 104px;
+      flex: 0 0 104px;
+      border-radius: 9999px;
+      background: conic-gradient(#0f766e calc(var(--score) * 1%), #e2e8f0 0);
+    }
+    .score-ring::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: inherit;
+      background: white;
+    }
+    .score-ring-content { position: relative; z-index: 1; text-align: center; }
+    .check-pass { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+    .check-warning { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+    .check-fail { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .check-info { border-color: #cbd5e1; background: #f8fafc; color: #334155; }
+    @media (min-width: 1280px) {
+      .ats-panel {
+        position: sticky;
+        top: 1rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+      }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .template-card, .score-ring { transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-ink min-h-screen">
+  <%- include('partials/header') %>
+
+  <main class="max-w-[1600px] mx-auto px-4 py-5">
+    <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+      <div class="max-w-5xl">
+        <a href="<%= back %>" class="text-sm text-accent underline">← Back to job</a>
+        <h2 class="text-2xl font-bold mt-1">Choose a one-page resume</h2>
+        <p class="text-sm text-slate-600 mt-1">
+          <%= job.title %> · <%= job.company_name || 'Company' %>.
+          Compare the layouts, inspect the selected A4 page, and review its heuristic ATS checks before downloading.
+        </p>
+      </div>
+    </div>
+
+    <details class="mb-5 rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+      <summary class="cursor-pointer px-4 py-3 font-bold">Tailor this resume’s content</summary>
+      <form
+        id="resume-content-form"
+        method="POST"
+        action="/jobs/<%= job.id %>/build-resume?preview=1&amp;panel=<%= panel %>"
+        class="grid gap-4 border-t border-slate-200 p-4"
+      >
+        <input id="editor-template" type="hidden" name="template" value="<%= selectedTemplate %>" />
+        <input type="hidden" name="skillsEditor" value="1" />
+        <label class="grid gap-1 text-sm font-semibold">
+          Professional summary
+          <textarea name="resumeSummary" rows="4" class="rounded-lg border border-slate-300 p-3 font-normal leading-relaxed"><%= modifications.resumeSummary %></textarea>
+        </label>
+        <label class="grid gap-1 text-sm font-semibold">
+          Most relevant experience bullets <span class="font-normal text-slate-500">One bullet per line; these replace the first role’s tailored bullets for this application.</span>
+          <textarea name="modifiedBullets" rows="6" class="rounded-lg border border-slate-300 p-3 font-normal leading-relaxed"><%= modifications.modifiedBullets.join('\n') %></textarea>
+        </label>
+        <fieldset>
+          <legend class="text-sm font-semibold">Included master skills</legend>
+          <p class="mt-1 text-xs text-slate-500">Uncheck a skill to hide it from this job’s generated resume. Your canonical master resume is not changed.</p>
+          <div class="mt-2 flex max-h-48 flex-wrap gap-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
+            <% skillOptions.forEach(function(option) { %>
+              <label class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+                <input type="checkbox" name="includedSkills" value="<%= option.skill %>" <%= option.included ? 'checked' : '' %> />
+                <span><%= option.skill %></span>
+              </label>
+            <% }) %>
+          </div>
+        </fieldset>
+        <label class="grid gap-1 text-sm font-semibold">
+          Additional job-specific skills
+          <input name="extraSkills" value="<%= modifications.extraSkills.join(', ') %>" placeholder="TypeScript, PostgreSQL" class="rounded-lg border border-slate-300 p-3 font-normal" />
+          <span class="font-normal text-slate-500">Comma-separated; add only skills you can truthfully claim.</span>
+        </label>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-xs text-slate-500">Saving creates a compact job-specific delta, regenerates the PDF cache, and leaves reusable master data intact.</p>
+          <button type="submit" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">Save changes and regenerate</button>
+        </div>
+      </form>
+    </details>
+
+    <form
+      id="resume-choice-form"
+      method="GET"
+      action="/jobs/<%= job.id %>/resume.pdf"
+      data-job-id="<%= job.id %>"
+      class="space-y-5"
+    >
+      <fieldset>
+        <legend class="text-sm font-semibold text-slate-700 mb-2">Resume layout</legend>
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <% templates.forEach(function(tpl) { %>
+            <label class="cursor-pointer">
+              <input
+                type="radio"
+                name="template"
+                value="<%= tpl.id %>"
+                data-template-name="<%= tpl.name %>"
+                class="template-choice sr-only"
+                <%= selectedTemplate === tpl.id ? 'checked' : '' %>
+              />
+              <span class="template-card block h-full rounded-xl border border-slate-200 bg-white px-4 py-3 hover:border-teal-400">
+                <span class="flex items-center justify-between gap-2">
+                  <span class="font-semibold"><%= tpl.name %></span>
+                  <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">A4</span>
+                </span>
+                <span class="mt-1 block text-xs leading-relaxed text-slate-500"><%= tpl.blurb %></span>
+              </span>
+            </label>
+          <% }) %>
+        </div>
+      </fieldset>
+
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_390px] gap-5 items-start">
+        <section class="rounded-2xl border border-slate-200 bg-slate-200/60 p-3 sm:p-5" aria-labelledby="selected-preview-title">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Selected resume</p>
+              <h3 id="selected-preview-title" class="font-bold"><%= templates.find(function(tpl) { return tpl.id === selectedTemplate; })?.name || 'Resume' %> · A4 preview</h3>
+            </div>
+            <a
+              id="open-preview-link"
+              href="/jobs/<%= job.id %>/resume.html?template=<%= selectedTemplate %>"
+              target="_blank"
+              rel="noopener"
+              class="text-sm font-semibold text-accent underline"
+            >Open full size</a>
+          </div>
+          <div class="preview-sheet mx-auto">
+            <iframe
+              id="selected-preview"
+              src="/jobs/<%= job.id %>/resume.html?template=<%= selectedTemplate %>"
+              title="Selected resume preview"
+            ></iframe>
+          </div>
+        </section>
+
+        <aside id="ats-panel" class="ats-panel rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm" aria-busy="true">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-accent">Heuristic check</p>
+              <h3 class="text-lg font-bold">ATS readiness</h3>
+              <p id="selected-template-name" class="text-sm text-slate-500"></p>
+            </div>
+            <span id="analysis-state-badge" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Checking…</span>
+          </div>
+
+          <p class="mt-3 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-900">
+            This is a heuristic file-readiness and keyword-overlap check, not a guarantee of ranking in any employer’s ATS.
+          </p>
+
+          <div id="analysis-live" class="sr-only" role="status" aria-live="polite">Checking the selected resume.</div>
+          <div id="analysis-error" class="hidden mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+            <p id="analysis-error-message"></p>
+            <button id="retry-analysis" type="button" class="mt-2 font-semibold underline">Retry check</button>
+          </div>
+
+          <div id="analysis-content" class="mt-4 space-y-5 opacity-50" aria-hidden="true" inert>
+            <section class="flex items-center gap-4" aria-labelledby="readiness-heading">
+              <div id="readiness-ring" class="score-ring" role="img" aria-label="ATS readiness score unavailable">
+                <div class="score-ring-content">
+                  <div><span id="readiness-score" class="text-2xl font-bold">—</span><span class="text-xs text-slate-400">/100</span></div>
+                </div>
+              </div>
+              <div>
+                <h4 id="readiness-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Resume readiness</h4>
+                <p id="readiness-label" class="mt-1 text-lg font-bold">Checking…</p>
+                <p class="mt-1 text-xs text-slate-500">Parsing, structure, readability, and one-page fit.</p>
+              </div>
+            </section>
+
+            <section class="rounded-xl border border-slate-200 p-3" aria-labelledby="job-match-heading">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h4 id="job-match-heading" class="font-semibold">Job keyword match</h4>
+                  <p id="job-match-label" class="text-xs text-slate-500">Checking tailored content…</p>
+                </div>
+                <div class="text-right"><span id="job-match-score" class="text-xl font-bold">—</span><span class="text-xs text-slate-400">/100</span></div>
+              </div>
+              <div class="mt-3">
+                <p class="text-xs font-semibold text-emerald-700">Matched</p>
+                <div id="matched-keywords" class="mt-1 flex flex-wrap gap-1.5"></div>
+              </div>
+              <div class="mt-3">
+                <p class="text-xs font-semibold text-amber-700">Missing or underused</p>
+                <div id="missing-keywords" class="mt-1 flex flex-wrap gap-1.5"></div>
+              </div>
+            </section>
+
+            <section aria-labelledby="fit-heading">
+              <div class="flex items-center justify-between gap-2">
+                <h4 id="fit-heading" class="font-semibold">A4 render health</h4>
+                <span id="fit-summary" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">Checking…</span>
+              </div>
+              <dl class="mt-2 grid grid-cols-2 gap-2 text-sm">
+                <div class="rounded-lg bg-slate-50 p-2"><dt class="text-xs text-slate-500">Page size</dt><dd id="fit-page-size" class="font-semibold">—</dd></div>
+                <div class="rounded-lg bg-slate-50 p-2"><dt class="text-xs text-slate-500">Pages</dt><dd id="fit-page-count" class="font-semibold">—</dd></div>
+                <div class="rounded-lg bg-slate-50 p-2"><dt class="text-xs text-slate-500">Page used</dt><dd id="fit-fill" class="font-semibold">—</dd></div>
+                <div class="rounded-lg bg-slate-50 p-2"><dt class="text-xs text-slate-500">Body font</dt><dd id="fit-font" class="font-semibold">—</dd></div>
+                <div class="rounded-lg bg-slate-50 p-2"><dt class="text-xs text-slate-500">Overflow</dt><dd id="fit-overflow" class="font-semibold">—</dd></div>
+                <div class="rounded-lg bg-slate-50 p-2"><dt class="text-xs text-slate-500">Clipped</dt><dd id="fit-clipped" class="font-semibold">—</dd></div>
+              </dl>
+            </section>
+
+            <section aria-labelledby="checks-heading">
+              <h4 id="checks-heading" class="font-semibold">Checks and fixes</h4>
+              <div id="checks-list" class="mt-2 space-y-2"></div>
+            </section>
+
+            <details class="rounded-xl border border-slate-200">
+              <summary class="cursor-pointer px-3 py-2 text-sm font-semibold">ATS text extraction preview</summary>
+              <div class="border-t border-slate-200 p-3">
+                <p class="mb-2 text-xs text-slate-500">This is the plain text an automated parser is expected to receive.</p>
+                <pre id="plain-text" class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-3 text-[11px] leading-relaxed text-slate-100">—</pre>
+              </div>
+            </details>
+          </div>
+        </aside>
+      </div>
+
+      <div class="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
+        <p id="download-status" class="text-xs text-slate-500" role="status" aria-live="polite">Checking the selected PDF before download…</p>
+        <div class="flex flex-wrap gap-2">
+          <a href="<%= back %>" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">Cancel</a>
+          <button id="download-selected" type="submit" disabled class="rounded-lg bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-100">
+            Download selected PDF
+          </button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    (function () {
+      var form = document.getElementById("resume-choice-form");
+      var preview = document.getElementById("selected-preview");
+      var previewTitle = document.getElementById("selected-preview-title");
+      var previewLink = document.getElementById("open-preview-link");
+      var panel = document.getElementById("ats-panel");
+      var content = document.getElementById("analysis-content");
+      var live = document.getElementById("analysis-live");
+      var errorBox = document.getElementById("analysis-error");
+      var errorMessage = document.getElementById("analysis-error-message");
+      var stateBadge = document.getElementById("analysis-state-badge");
+      var retryButton = document.getElementById("retry-analysis");
+      var downloadButton = document.getElementById("download-selected");
+      var downloadStatus = document.getElementById("download-status");
+      var editorTemplate = document.getElementById("editor-template");
+      var activeRequest = null;
+      var canDownload = false;
+
+      if (!form || !preview || !panel || !downloadButton || !downloadStatus) return;
+
+      var jobId = form.getAttribute("data-job-id") || "";
+
+      function byId(id) { return document.getElementById(id); }
+      function numberOrNull(value) {
+        if (value === null || value === undefined || value === "") return null;
+        var parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+      function displayScore(value) {
+        var score = numberOrNull(value);
+        return score === null ? "—" : String(Math.max(0, Math.min(100, Math.round(score))));
+      }
+      function displayValue(value, suffix) {
+        if (value === null || value === undefined || value === "") return "—";
+        return String(value) + (suffix || "");
+      }
+      function displayBoolean(value) {
+        if (value === true) return "Yes";
+        if (value === false) return "No";
+        return "—";
+      }
+      function selectedRadio() {
+        return form.querySelector("input[name='template']:checked");
+      }
+      function templateName(radio) {
+        return radio ? (radio.getAttribute("data-template-name") || radio.value) : "Resume";
+      }
+      function endpoint(kind, templateId) {
+        return "/jobs/" + encodeURIComponent(jobId) + "/" + kind + "?template=" + encodeURIComponent(templateId);
+      }
+
+      function sizePreview() {
+        var sheet = preview.parentElement;
+        if (!sheet) return;
+        var scale = sheet.clientWidth / 794;
+        preview.style.transform = "scale(" + String(scale) + ")";
+      }
+
+      function setContentInteractive(enabled) {
+        content.setAttribute("aria-hidden", enabled ? "false" : "true");
+        if (enabled) {
+          content.removeAttribute("inert");
+          content.classList.remove("opacity-50");
+        } else {
+          content.setAttribute("inert", "");
+          content.classList.add("opacity-50");
+        }
+      }
+
+      function setDownloadAvailability(enabled, message) {
+        canDownload = Boolean(enabled);
+        downloadButton.disabled = !canDownload;
+        downloadButton.setAttribute("aria-disabled", canDownload ? "false" : "true");
+        downloadStatus.textContent = message;
+      }
+
+      function setLoading(name) {
+        panel.setAttribute("aria-busy", "true");
+        setContentInteractive(false);
+        setDownloadAvailability(false, "Checking " + name + " PDF fit before download…");
+        errorBox.classList.add("hidden");
+        stateBadge.textContent = "Checking…";
+        stateBadge.className = "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600";
+        live.textContent = "Checking " + name + " ATS readiness.";
+      }
+
+      function setError(message) {
+        panel.setAttribute("aria-busy", "false");
+        setContentInteractive(false);
+        setDownloadAvailability(false, "Download unavailable until the selected PDF passes its A4 fit check.");
+        errorMessage.textContent = message;
+        errorBox.classList.remove("hidden");
+        stateBadge.textContent = "Unavailable";
+        stateBadge.className = "rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700";
+        live.textContent = "ATS check unavailable. " + message;
+      }
+
+      function addKeyword(container, value, tone) {
+        var chip = document.createElement("span");
+        chip.className = tone === "matched"
+          ? "rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-800"
+          : "rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800";
+        chip.textContent = String(value);
+        container.appendChild(chip);
+      }
+
+      function renderKeywords(id, values, tone) {
+        var container = byId(id);
+        container.replaceChildren();
+        var list = Array.isArray(values) ? values.filter(Boolean) : [];
+        if (!list.length) {
+          var empty = document.createElement("span");
+          empty.className = "text-xs text-slate-400";
+          empty.textContent = tone === "matched" ? "No matched keywords reported." : "No missing keywords reported.";
+          container.appendChild(empty);
+          return;
+        }
+        list.forEach(function (value) { addKeyword(container, value, tone); });
+      }
+
+      function normalStatus(value) {
+        var status = String(value || "info").toLowerCase();
+        if (status === "warn") status = "warning";
+        return ["pass", "warning", "fail"].includes(status) ? status : "info";
+      }
+
+      function renderChecks(checks) {
+        var list = byId("checks-list");
+        list.replaceChildren();
+        if (!Array.isArray(checks) || !checks.length) {
+          var empty = document.createElement("p");
+          empty.className = "text-sm text-slate-500";
+          empty.textContent = "No individual checks were reported.";
+          list.appendChild(empty);
+          return;
+        }
+
+        checks.forEach(function (check) {
+          var status = normalStatus(check && check.status);
+          var statusLabel = status === "pass" ? "Pass" : status === "warning" ? "Warning" : status === "fail" ? "Fail" : "Information";
+          var item = document.createElement("div");
+          item.className = "rounded-lg border p-2.5 text-sm check-" + status;
+
+          var heading = document.createElement("div");
+          heading.className = "flex items-start gap-2 font-semibold";
+          var icon = document.createElement("span");
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = status === "pass" ? "✓" : status === "warning" ? "!" : status === "fail" ? "×" : "i";
+          var accessibleStatus = document.createElement("span");
+          accessibleStatus.className = "sr-only";
+          accessibleStatus.textContent = statusLabel + ": ";
+          var title = document.createElement("span");
+          title.textContent = String((check && (check.title || check.label || check.id)) || "Resume check");
+          heading.append(icon, accessibleStatus, title);
+          item.appendChild(heading);
+
+          var detailText = check && (check.detail || check.message);
+          if (detailText) {
+            var detail = document.createElement("p");
+            detail.className = "mt-1 pl-5 text-xs leading-relaxed opacity-90";
+            detail.textContent = String(detailText);
+            item.appendChild(detail);
+          }
+          var suggestionText = check && check.suggestion;
+          if (suggestionText && String(suggestionText) !== String(detailText || "")) {
+            var suggestion = document.createElement("p");
+            suggestion.className = "mt-1 pl-5 text-xs leading-relaxed font-medium";
+            var suggestionLabel = document.createElement("span");
+            suggestionLabel.className = "font-bold";
+            suggestionLabel.textContent = status === "pass" ? "Keep: " : "Suggested fix: ";
+            suggestion.append(suggestionLabel, document.createTextNode(String(suggestionText)));
+            item.appendChild(suggestion);
+          }
+          list.appendChild(item);
+        });
+      }
+
+      function renderReport(report, name) {
+        var readiness = report && report.readiness ? report.readiness : {};
+        var jobMatch = report && report.jobMatch ? report.jobMatch : {};
+        var fit = report && report.fit ? report.fit : {};
+        var readinessScore = numberOrNull(readiness.score);
+        var boundedScore = readinessScore === null ? 0 : Math.max(0, Math.min(100, readinessScore));
+
+        panel.setAttribute("aria-busy", "false");
+        setContentInteractive(true);
+        errorBox.classList.add("hidden");
+        stateBadge.textContent = "Checked";
+        stateBadge.className = "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700";
+
+        byId("readiness-score").textContent = displayScore(readiness.score);
+        byId("readiness-label").textContent = String(readiness.label || "Heuristic result");
+        byId("readiness-ring").style.setProperty("--score", String(boundedScore));
+        byId("readiness-ring").setAttribute("aria-label", "ATS readiness score " + displayScore(readiness.score) + " out of 100");
+
+        byId("job-match-score").textContent = displayScore(jobMatch.score);
+        byId("job-match-label").textContent = String(jobMatch.label || "Heuristic keyword overlap");
+        renderKeywords("matched-keywords", jobMatch.matched, "matched");
+        renderKeywords("missing-keywords", jobMatch.missing, "missing");
+
+        byId("fit-page-size").textContent = displayValue(fit.pageSize);
+        byId("fit-page-count").textContent = displayValue(fit.pageCount);
+        byId("fit-fill").textContent = displayValue(fit.fillPercent, fit.fillPercent === null || fit.fillPercent === undefined ? "" : "%");
+        byId("fit-font").textContent = displayValue(fit.minFontPt, fit.minFontPt === null || fit.minFontPt === undefined ? "" : " pt");
+        byId("fit-overflow").textContent = displayBoolean(fit.overflow);
+        byId("fit-clipped").textContent = displayBoolean(fit.clipped);
+
+        var reportedChecks = Array.isArray(report && report.checks) ? report.checks : [];
+        var criticalCheckIds = ["parser-structure", "a4-one-page-fit", "readable-type"];
+        var failedCriticalChecks = reportedChecks.filter(function (check) {
+          return check &&
+            criticalCheckIds.includes(String(check.id || "")) &&
+            normalStatus(check.status) === "fail";
+        });
+        var minimumReadableFontPt = numberOrNull(fit.minimumReadableFontPt);
+        if (minimumReadableFontPt === null) minimumReadableFontPt = 10;
+        var minFontPt = numberOrNull(fit.minFontPt);
+        var pdfTextRecall = numberOrNull(fit.pdfTextRecall);
+        var optionalPostflightUnavailable =
+          fit.tagged === null || fit.tagged === undefined ||
+          fit.textLayerPresent === null || fit.textLayerPresent === undefined ||
+          pdfTextRecall === null || minFontPt === null;
+        var hasHardFailure = failedCriticalChecks.length > 0;
+        var isA4 = String(fit.pageSize || "").trim().toUpperCase() === "A4";
+        var readableType = minFontPt === null
+          ? !hasHardFailure
+          : minFontPt >= minimumReadableFontPt;
+        var parserPostflightPassed =
+          fit.tagged !== false &&
+          fit.textLayerPresent !== false &&
+          (pdfTextRecall === null || pdfTextRecall >= 0.98) &&
+          (!optionalPostflightUnavailable || !hasHardFailure);
+        var healthyFit =
+          isA4 &&
+          Number(fit.pageCount) === 1 &&
+          fit.overflow === false &&
+          fit.clipped === false &&
+          readableType &&
+          parserPostflightPassed &&
+          !hasHardFailure;
+        var fitSummary = byId("fit-summary");
+        fitSummary.textContent = healthyFit ? "PDF ready" : "Review PDF";
+        fitSummary.className = healthyFit
+          ? "rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+          : "rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700";
+        setDownloadAvailability(
+          healthyFit,
+          healthyFit
+            ? "A4 fit and ATS text postflight passed. The selected PDF is ready to download."
+            : "Download blocked: the PDF must be one readable A4 page with intact ATS text extraction and no critical check failures."
+        );
+
+        renderChecks(report && report.checks);
+        byId("plain-text").textContent = String((report && report.plainText) || "No extracted text was reported.");
+        live.textContent = name + " check complete: " + displayScore(readiness.score) + " out of 100, " + String(readiness.label || "result available") + ".";
+      }
+
+      async function checkSelected() {
+        var radio = selectedRadio();
+        if (!radio) return;
+        var templateId = radio.value;
+        var name = templateName(radio);
+
+        if (activeRequest) activeRequest.abort();
+        activeRequest = new AbortController();
+        setLoading(name);
+
+        try {
+          var response = await fetch(endpoint("resume-check", templateId), {
+            headers: { Accept: "application/json" },
+            signal: activeRequest.signal
+          });
+          var payload = await response.json().catch(function () { return {}; });
+          if (!response.ok) throw new Error(payload.error || payload.message || "The resume check could not be completed.");
+          renderReport(payload, name);
+        } catch (error) {
+          if (error && error.name === "AbortError") return;
+          setError(error && error.message ? error.message : "The resume check could not be completed.");
+        }
+      }
+
+      function selectTemplate(radio) {
+        if (!radio) return;
+        var templateId = radio.value;
+        var name = templateName(radio);
+        var htmlUrl = endpoint("resume.html", templateId);
+        preview.src = htmlUrl;
+        preview.title = name + " resume preview";
+        previewTitle.textContent = name + " · A4 preview";
+        previewLink.href = htmlUrl;
+        if (editorTemplate) editorTemplate.value = templateId;
+        byId("selected-template-name").textContent = name + " layout";
+
+        var url = new URL(window.location.href);
+        url.searchParams.set("template", templateId);
+        window.history.replaceState(null, "", url.toString());
+        checkSelected();
+      }
+
+      form.querySelectorAll("input[name='template']").forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          if (radio.checked) selectTemplate(radio);
+        });
+      });
+      form.addEventListener("submit", function (event) {
+        if (canDownload) return;
+        event.preventDefault();
+        downloadStatus.textContent = "Download blocked until the selected PDF passes its A4 fit check.";
+        live.textContent = downloadStatus.textContent;
+      });
+      retryButton.addEventListener("click", checkSelected);
+      preview.addEventListener("load", sizePreview);
+      window.addEventListener("resize", sizePreview, { passive: true });
+      sizePreview();
+      selectTemplate(selectedRadio());
+    })();
+  </script>
+</body>
+</html>

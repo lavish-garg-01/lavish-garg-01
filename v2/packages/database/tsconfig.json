@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "references": [
+    { "path": "../strategy-intelligence" },
+    { "path": "../ai" },
+    { "path": "../contracts" },
+    { "path": "../declaration-policy" },
+    { "path": "../domain" },
+    { "path": "../auth" },
+    { "path": "../candidate-truth" },
+    { "path": "../entitlements" },
+    { "path": "../job-intelligence" },
+    { "path": "../onboarding" },
+    { "path": "../repeatable-entities" },
+    { "path": "../verified-learning" }
+  ],
+  "include": ["src/**/*.ts"]
+}

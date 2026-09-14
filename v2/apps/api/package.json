@@ -1,0 +1,30 @@
+{
+  "name": "@job-hunter-v2/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "dependencies": {
+    "@job-hunter-v2/strategy-intelligence": "0.1.0",
+    "@job-hunter-v2/ai": "0.1.0",
+    "@fastify/cors": "^11.3.0",
+    "@fastify/multipart": "^9.3.0",
+    "@fastify/swagger": "9.8.1",
+    "@fastify/swagger-ui": "6.1.1",
+    "@job-hunter-v2/auth": "0.1.0",
+    "@job-hunter-v2/candidate-truth": "0.1.0",
+    "@job-hunter-v2/contracts": "0.1.0",
+    "@job-hunter-v2/declaration-policy": "0.1.0",
+    "@job-hunter-v2/database": "0.1.0",
+    "@job-hunter-v2/domain": "0.1.0",
+    "@job-hunter-v2/execution": "0.1.0",
+    "@job-hunter-v2/field-intelligence": "0.1.0",
+    "@job-hunter-v2/job-intelligence": "0.1.0",
+    "@job-hunter-v2/onboarding": "0.1.0",
+    "@job-hunter-v2/repeatable-entities": "0.1.0",
+    "@job-hunter-v2/verified-learning": "0.1.0",
+    "fastify": "5.12.1",
+    "pino": "10.3.1",
+    "zod": "4.5.4"
+  }
+}

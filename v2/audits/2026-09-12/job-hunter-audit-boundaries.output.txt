@@ -1,0 +1,275 @@
+Using Node v24.8.0
+{
+  "auditedAt": "2026-09-12T16:33:37.835Z",
+  "method": "Synthetic counterexamples against current source; not employer submissions",
+  "results": [
+    {
+      "id": "D01",
+      "finding": "CTC renderer/parser disagree by 100000x",
+      "representation": {
+        "representationId": "INR_YEAR_TO_LPA@1",
+        "policyVersion": 1,
+        "sourceKind": "MONEY",
+        "containsCandidateValue": true,
+        "kind": "TEXT",
+        "text": "14"
+      },
+      "normalizedBack": {
+        "schemaVersion": 1,
+        "dataClass": "CANDIDATE_PRIVATE",
+        "kind": "MONEY",
+        "amountExact": "14",
+        "currency": "INR",
+        "period": "YEAR"
+      }
+    },
+    {
+      "id": "D02",
+      "finding": "Unitless experience outputs bare months",
+      "representation": {
+        "representationId": "DURATION_MONTHS@1",
+        "policyVersion": 1,
+        "sourceKind": "DURATION",
+        "containsCandidateValue": true,
+        "kind": "TEXT",
+        "text": "44"
+      }
+    },
+    {
+      "id": "D03",
+      "finding": "Annual money not converted for explicitly monthly field",
+      "representation": {
+        "representationId": "MONEY_INR_YEAR@1",
+        "policyVersion": 1,
+        "sourceKind": "MONEY",
+        "containsCandidateValue": true,
+        "kind": "TEXT",
+        "text": "1200000"
+      }
+    },
+    {
+      "id": "D04",
+      "finding": "Joining wording confidently mapped to integer notice period; AI not called",
+      "semantic": {
+        "fieldRuntimeId": "field:12345678",
+        "descriptorFingerprint": "cb00726e92d6d3411f8f1a9a52a7909f084a88f4ede4c8b08cc21fdfe84dd5f1",
+        "state": "RESOLVED_HIGH",
+        "canonicalKey": "NOTICE_PERIOD",
+        "confidence": 0.965,
+        "resolver": "EXACT_ALIAS",
+        "candidates": [
+          {
+            "canonicalKey": "NOTICE_PERIOD",
+            "description": "Candidate's current notice period in days.",
+            "confidence": 0.965,
+            "source": "EXACT_ALIAS",
+            "reasonCodes": [
+              "EXACT_NORMALIZED_ALIAS"
+            ]
+          },
+          {
+            "canonicalKey": "START_DATE",
+            "description": "Candidate's available start date for one application.",
+            "confidence": 0.6425,
+            "source": "LEXICAL",
+            "reasonCodes": [
+              "LEXICAL_ALIAS_OVERLAP"
+            ]
+          },
+          {
+            "canonicalKey": "CURRENT_LOCATION",
+            "description": "Candidate's current city or locality.",
+            "confidence": 0.55,
+            "source": "LEXICAL",
+            "reasonCodes": [
+              "LEXICAL_ALIAS_OVERLAP"
+            ]
+          },
+          {
+            "canonicalKey": "PERSONAL_SUMMARY",
+            "description": "Candidate-verified professional summary.",
+            "confidence": 0.5325,
+            "source": "LEXICAL",
+            "reasonCodes": [
+              "LEXICAL_ALIAS_OVERLAP"
+            ]
+          }
+        ],
+        "reasonCodes": [
+          "J1-2026-09",
+          "EXACT_NORMALIZED_ALIAS"
+        ],
+        "errorCodes": [],
+        "evidence": {
+          "alias": 0.94,
+          "fieldType": 0.5,
+          "section": 0,
+          "neighbor": 0,
+          "attribute": 0,
+          "candidateMargin": 0.3225
+        },
+        "contextHints": {
+          "countryCode": null
+        },
+        "declarationHint": {
+          "state": "NOT_DECLARATION",
+          "confidence": 0,
+          "textEvidence": "UNAVAILABLE",
+          "sourceEvidence": [],
+          "reasonCodes": [
+            "J_NO_DECLARATION_EVIDENCE"
+          ],
+          "valuePrivate": true,
+          "containsCandidateValue": false
+        },
+        "entityBinding": {
+          "entityType": null,
+          "bindingKind": "NONE",
+          "instanceKey": null,
+          "candidateEntityId": null,
+          "ordinalHint": null,
+          "groupLabel": null
+        },
+        "valuePrivate": true,
+        "containsCandidateValue": false
+      }
+    },
+    {
+      "id": "D05",
+      "finding": "Incident narrative retrieves PERSONAL_SUMMARY, not a dedicated contextual answer concept; fake AI adapter invoked then rejected",
+      "state": "AMBIGUOUS",
+      "candidates": [
+        "PERSONAL_SUMMARY"
+      ],
+      "aiCalls": 1
+    },
+    {
+      "id": "D06",
+      "finding": "Greedy telephone parser splits valid country prefix incorrectly",
+      "normalized": {
+        "schemaVersion": 1,
+        "dataClass": "CANDIDATE_PRIVATE",
+        "kind": "PHONE",
+        "countryCode": "+9198",
+        "nationalNumber": "76543210",
+        "extension": null
+      }
+    },
+    {
+      "id": "D14",
+      "finding": "Semantically correct supplied AI synonym mapping gets zero confidence from lexical overlap validator",
+      "result": {
+        "value": {
+          "selectedCanonical": "CURRENT_COMPANY",
+          "confidence": 0,
+          "ambiguous": false,
+          "ranking": [
+            {
+              "canonicalKey": "CURRENT_COMPANY",
+              "confidence": 0.99
+            }
+          ],
+          "reasonCategory": "LABEL_CONTEXT"
+        },
+        "confidence": 0
+      }
+    },
+    {
+      "id": "D15",
+      "finding": "Grounding validator accepts a negation reversal using only words in the source",
+      "accepted": "I lead Kubernetes teams."
+    },
+    {
+      "id": "D07",
+      "finding": "One radio question scanned as three independent fields",
+      "fieldCount": 3
+    },
+    {
+      "id": "D08",
+      "finding": "Enum answer in textarea has no compatible executor",
+      "result": {
+        "candidates": [],
+        "value": "",
+        "verification": {
+          "status": "FAILED",
+          "failureClass": "VERIFICATION_FAILED"
+        }
+      }
+    },
+    {
+      "id": "D09",
+      "finding": "Boolean answer in text input has no compatible executor",
+      "result": {
+        "candidates": [],
+        "value": "",
+        "verification": {
+          "status": "FAILED",
+          "failureClass": "VERIFICATION_FAILED"
+        }
+      }
+    },
+    {
+      "id": "D10",
+      "finding": "Bare 45 is independently VERIFIED without verifying answer meaning",
+      "result": {
+        "candidates": [
+          "NATIVE_VALUE_SETTER@1",
+          "DIRECT_PROPERTY_EVENTS_FALLBACK@1"
+        ],
+        "value": "45",
+        "verification": {
+          "status": "VERIFIED",
+          "failureClass": null
+        }
+      }
+    },
+    {
+      "id": "D11",
+      "finding": "Contenteditable scanner type becomes native-textarea planner hint, excluding its existing strategy",
+      "result": {
+        "candidates": [],
+        "value": "",
+        "verification": {
+          "status": "FAILED",
+          "failureClass": "VERIFICATION_FAILED"
+        }
+      }
+    },
+    {
+      "id": "D12",
+      "finding": "DOM readback passes while application model rejects synthetic event",
+      "result": {
+        "candidates": [
+          "NATIVE_VALUE_SETTER@1",
+          "DIRECT_PROPERTY_EVENTS_FALLBACK@1"
+        ],
+        "value": "Example",
+        "verification": {
+          "status": "VERIFIED",
+          "failureClass": null
+        }
+      },
+      "applicationModel": ""
+    },
+    {
+      "id": "D13",
+      "finding": "Unassociated combobox searches whole document and clicks another listbox option",
+      "unrelatedClicked": true,
+      "result": {
+        "candidates": [
+          "ARIA_COMBOBOX_EXACT_OPTION@1"
+        ],
+        "value": "",
+        "verification": {
+          "status": "FAILED",
+          "failureClass": "VERIFICATION_FAILED"
+        }
+      }
+    },
+    {
+      "id": "D16",
+      "finding": "Open-shadow control under display:none host is incorrectly scanned as visible",
+      "fields": 1
+    }
+  ]
+}

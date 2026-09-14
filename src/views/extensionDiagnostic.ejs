@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Phase 1 ATS Acceptance Fixture</title>
+  <style>
+    body{margin:0;background:#f1f5f9;color:#102a43;font:16px system-ui,sans-serif}.page{max-width:800px;margin:32px auto;padding:0 18px}.card{background:#fff;border:1px solid #cbd5e1;border-radius:16px;padding:24px;box-shadow:0 12px 35px #0f172a12}h1{margin:0 0 8px}.help{color:#64748b;margin:0 0 22px}.field{display:block;margin:16px 0;font-weight:700}.field input,.field textarea,.field select{box-sizing:border-box;width:100%;margin-top:6px;border:1px solid #94a3b8;border-radius:9px;padding:11px;font:inherit;font-weight:400}.field textarea{min-height:110px}.check,.next{border:0;border-radius:9px;background:#0f766e;color:#fff;padding:11px 16px;font-weight:700;cursor:pointer}.result{margin-top:14px;font-weight:700;color:#0f766e}.job{padding:10px 12px;border-radius:8px;background:#ecfdf5;color:#065f46}.step[hidden],.conditional[hidden]{display:none}.group{margin:16px 0;padding:14px;border:1px solid #cbd5e1;border-radius:12px}.group legend{font-weight:800}.group label{display:block;margin:8px 0}.actions{display:flex;gap:8px;justify-content:space-between;margin-top:20px}.note{font-size:13px;color:#64748b}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <h1>Phase 1 extension acceptance fixture</h1>
+      <p class="help">This deliberately difficult local ATS never contacts an employer and never submits. It tests dynamic fields, multi-step recovery, uploads, protected questions, and learning replay.</p>
+      <p class="job"><strong><%= job.title %></strong> · <%= job.company_name %></p>
+      <form id="diagnostic-form">
+        <section class="step" data-step="1">
+          <h2>Step 1 · Identity and availability</h2>
+          <label class="field">Full name<input name="full_name" autocomplete="name" required /></label>
+          <label class="field">Email address<input name="email" type="email" autocomplete="email" required /></label>
+          <label class="field">Phone number<input name="phone" type="tel" autocomplete="tel" required /></label>
+          <label class="field">Current CTC (LPA)<input name="current_ctc" type="number" min="0" step="0.1" required /></label>
+          <label class="field">Expected CTC (LPA)<input name="expected_ctc" type="number" min="0" step="0.1" required /></label>
+          <label class="field">Notice period in days<input name="notice_period" type="number" min="0" required /></label>
+          <label class="field">Are you willing to relocate?<select name="relocation" id="relocation" required><option value="">Choose…</option><option>Yes</option><option>No</option></select></label>
+          <label class="field conditional" id="relocation-city" hidden>Preferred relocation city<input name="relocation_city" /></label>
+          <div class="actions"><span></span><button type="button" class="next" data-next="2">Next</button></div>
+        </section>
+        <section class="step" data-step="2" hidden>
+          <h2>Step 2 · Experience and documents</h2>
+          <label class="field">Years of Node.js Experience<input name="node_experience" type="number" min="0" step="0.5" required /></label>
+          <fieldset class="group"><legend>Backend technologies used professionally</legend>
+            <label><input type="checkbox" name="backend_skills" value="Node.js" required /> Node.js</label>
+            <label><input type="checkbox" name="backend_skills" value="Kafka" /> Kafka</label>
+            <label><input type="checkbox" name="backend_skills" value="AWS" /> AWS</label>
+          </fieldset>
+          <label class="field">Resume Upload<input name="resume" type="file" accept="application/pdf" required /></label>
+          <label class="field">Why are you interested?<textarea name="why_interested" maxlength="500" required></textarea></label>
+          <div class="actions"><button type="button" class="next" data-next="1">Back</button><button type="button" class="next" data-next="3">Next</button></div>
+        </section>
+        <section class="step" data-step="3" hidden>
+          <h2>Step 3 · Candidate-controlled review</h2>
+          <label class="field">Are you legally authorized to work in India?<select name="work_authorization" required><option value="">Choose…</option><option>Yes</option><option>No</option></select></label>
+          <label class="field">Verification challenge (test CAPTCHA)<input name="captcha_code" required autocomplete="off" /></label>
+          <fieldset class="group"><legend>Legal declaration</legend><label><input type="checkbox" name="legal_declaration" required /> I certify that the information is accurate.</label></fieldset>
+          <label class="field">Gender (optional)<select name="gender"><option value="">Prefer not to answer</option><option>Woman</option><option>Man</option><option>Non-binary</option></select></label>
+          <input type="hidden" name="bot_trap" value="" />
+          <p class="note">COPILOT must leave work authorization, CAPTCHA, demographic, and legal declaration under candidate control.</p>
+          <div class="actions"><button type="button" class="next" data-next="2">Back</button><button type="button" id="check" class="check">Check filled fields</button></div>
+        </section>
+        <div id="result" class="result" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll("[data-next]").forEach(function(button) {
+      button.addEventListener("click", function() {
+        document.querySelectorAll("[data-step]").forEach(function(step) { step.hidden = step.dataset.step !== button.dataset.next; });
+      });
+    });
+    document.getElementById("relocation").addEventListener("change", function(event) {
+      var city = document.getElementById("relocation-city");
+      city.hidden = event.target.value !== "Yes";
+      city.querySelector("input").required = event.target.value === "Yes";
+    });
+    document.getElementById("check").addEventListener("click", function() {
+      var controls = Array.from(document.querySelectorAll("input:not([type=hidden]),textarea,select"));
+      var filled = controls.filter(function(control) { return control.type === "file" ? control.files.length : control.type === "checkbox" ? control.checked : String(control.value || "").trim(); });
+      document.getElementById("result").textContent = filled.length + " of " + controls.length + " fields are filled. No data was submitted.";
+    });
+  </script>
+</body>
+</html>

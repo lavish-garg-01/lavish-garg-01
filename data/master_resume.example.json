@@ -1,0 +1,67 @@
+{
+  "fullName": "Your Name",
+  "email": "your-email@example.com",
+  "phone": "+91 90000 00000",
+  "location": "Bengaluru, India",
+  "linkedin": "https://www.linkedin.com/in/your-profile",
+  "github": "https://github.com/your-profile",
+  "portfolio": "",
+  "noticePeriodDays": 30,
+  "summary": "Backend engineer experienced in building reliable APIs and services. Replace this summary with an accurate description of your own experience.",
+  "skills": [
+    "JavaScript",
+    "Node.js",
+    "Express",
+    "PostgreSQL",
+    "Docker"
+  ],
+  "keywords": [
+    "Backend Engineer",
+    "REST APIs",
+    "Microservices"
+  ],
+  "skillGroups": {
+    "languages": [
+      "JavaScript"
+    ],
+    "frameworksAndArchitecture": [
+      "Node.js",
+      "Express",
+      "REST APIs"
+    ],
+    "databasesAndStorage": [
+      "PostgreSQL"
+    ],
+    "streamingAndProtocols": [],
+    "devopsAndCloud": [
+      "Docker"
+    ],
+    "performanceAndObservability": [],
+    "csFundamentals": [
+      "Data Structures",
+      "System Design"
+    ]
+  },
+  "experience": [
+    {
+      "company": "Example Company",
+      "title": "Software Engineer",
+      "startDate": "Jan 2022",
+      "endDate": "Present",
+      "location": "India",
+      "bullets": [
+        "Replace this with a factual, measurable achievement from your experience.",
+        "Describe the technology used, the problem solved, and the outcome."
+      ]
+    }
+  ],
+  "projects": [],
+  "education": [
+    {
+      "school": "Example University",
+      "degree": "Bachelor's Degree",
+      "startDate": "2018",
+      "endDate": "2022"
+    }
+  ]
+}

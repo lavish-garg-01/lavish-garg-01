@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Form B · naukri cover-letter trap</title>
+</head>
+<body>
+  <main>
+    <h1>Application</h1>
+    <form id="application">
+      <label data-field="full_name">Full name
+        <input type="text" name="full_name" autocomplete="name" />
+      </label>
+      <label data-field="email">Email
+        <input type="email" name="email" autocomplete="email" />
+      </label>
+      <label data-field="phone">Phone
+        <input type="tel" name="phone" autocomplete="tel" />
+      </label>
+      <label data-field="cover_letter">Cover letter / CV upload
+        <input type="file" name="cover" data-testid="naukri-cover-letter" aria-label="CV" accept="application/pdf" />
+      </label>
+      <label data-field="resume">Resume PDF
+        <input type="file" name="resume" data-testid="naukri-resume" accept="application/pdf" />
+      </label>
+    </form>
+  </main>
+</body>
+</html>

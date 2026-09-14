@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../domain" },
+    { "path": "../contracts" },
+    { "path": "../declaration-policy" },
+    { "path": "../candidate-truth" },
+    { "path": "../field-intelligence" },
+    { "path": "../form-graph" }
+  ]
+}

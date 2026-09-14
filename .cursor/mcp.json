@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "cursor-codex-shared": {
+      "url": "https://api.datamcp.app/api/mcp/conn_iayyl0FgcClihAST?key=-At1rswyL3miDasOhsVGFw",
+      "headers": {
+        "Authorization": "Bearer sk_live_ZNZCmKH8yo0pbHWS6usHHEf3BETv1J1JnbIo-YE--Jk"
+      }
+    }
+  }
+}

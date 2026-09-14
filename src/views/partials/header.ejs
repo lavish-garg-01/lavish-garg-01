@@ -1,0 +1,31 @@
+  <div class="border-b border-slate-200 bg-white">
+    <div class="max-w-[1600px] mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">Job Hunter Agent</h1>
+        <p class="text-sm text-slate-500">India tech · ingest → score → tailor → review → apply</p>
+      </div>
+      <nav class="flex flex-wrap gap-1 text-xs font-semibold">
+        <% const tabs = [
+          { id: 'matches', label: 'Matches', n: counts.matches, href: '/?panel=matches' },
+          { id: 'close', label: 'Close', n: counts.close, href: '/?panel=close' },
+          { id: 'discarded', label: 'Discarded', n: counts.discarded, href: '/?panel=discarded' },
+          { id: 'pending', label: 'Pending', n: counts.pending, href: '/?panel=pending' },
+          { id: 'tracker', label: 'Tracker', n: counts.tracker, href: '/?panel=tracker' },
+          { id: 'archived', label: 'Archived', n: counts.archived, href: '/?panel=archived' },
+          { id: 'overview', label: 'Overview', n: null, href: '/?panel=overview' },
+          { id: 'copilot', label: 'COPILOT', n: counts.applications || 0, href: '/copilot' },
+          { id: 'resume', label: 'Resume', n: null, href: '/resume' },
+          { id: 'onboarding', label: 'Setup', n: null, href: '/onboarding' },
+          { id: 'reliability', label: 'Reliability', n: null, href: '/admin/reliability' },
+          { id: 'adaptive-evidence', label: 'Evidence', n: null, href: '/admin/adaptive-evidence' },
+          { id: 'adapters', label: 'Adapters', n: null, href: '/admin/adapters' }
+        ]; %>
+        <% tabs.forEach(function(tab) { %>
+          <a href="<%= tab.href %>"
+             class="px-3 py-1.5 rounded-lg <%= panel === tab.id ? 'bg-accent text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' %>">
+            <%= tab.label %><% if (tab.n != null) { %> <span class="opacity-80"><%= tab.n %></span><% } %>
+          </a>
+        <% }) %>
+      </nav>
+    </div>
+  </div>

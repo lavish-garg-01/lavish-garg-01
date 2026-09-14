@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Job Hunter Copilot</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <main>
+      <header><span class="mark">JH</span><div><b>Job Hunter Copilot</b><small>Your application companion</small></div></header>
+      <nav class="panel-tabs" aria-label="Copilot sections"><button data-panel="autofill" aria-pressed="true">Autofill</button><button data-panel="profile" aria-pressed="false">Profile</button><button data-panel="documents" aria-pressed="false">Documents</button></nav>
+      <section id="autofill-panel">
+      <section id="status" aria-live="polite"><p class="muted">Connecting…</p></section>
+      <section aria-label="Delivery status"><p id="delivery-status" aria-live="polite">Checking delivery…</p><small>Queued is not saved. Private notes retry for 24 hours in this Chrome session only. Confirmed notes appear in Attention.</small><button id="discard-delivery">Discard pending delivery</button></section>
+      <section class="actions">
+        <button id="allow-site" hidden>Allow Copilot on this site</button>
+        <button id="scan-page" hidden>Scan this page</button>
+        <button id="fill-page" hidden>Fill safe fields</button>
+        <button id="retry">Reconnect</button>
+      </section>
+      <p class="muted">Résumé autofill first, when the employer provides it. Copilot then fills remaining safe fields. Review ATS-populated values before submitting.</p>
+      </section>
+      <section id="profile-panel" hidden><h1>Your application passport</h1><p>Verified global answers are your defaults. Application, job and company overrides take priority.</p><div id="profile-content" aria-live="polite"></div><button id="open-profile">Edit verified profile</button><p class="muted">Legal eligibility is context-specific. Privacy and acknowledgements stay yours to decide.</p></section>
+      <section id="documents-panel" hidden><h1>The right résumé for this role</h1><p>Applications keep the exact document version they used. A tailored draft is not used until you approve it.</p><div id="documents-content" aria-live="polite"></div><button id="open-documents">Manage résumés & documents</button><p class="muted">Open a matched job to tailor a résumé or create a cover letter, preview it, then approve for use.</p></section>
+      <p class="privacy">Copilot sends structural diagnostics only. Field and candidate values never enter extension telemetry.</p>
+    </main>
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

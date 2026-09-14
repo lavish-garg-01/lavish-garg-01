@@ -1,0 +1,230 @@
+const H = "a".repeat(64);
+const H2 = "b".repeat(64);
+const NOW = 1_788_070_000_000;
+
+export const sharedScopeFixture = Object.freeze({
+    schemaVersion: 1,
+    scopeType: "CANDIDATE",
+    scopeKey: null,
+    rank: 80
+});
+
+export const logicalFieldIdentityFixture = Object.freeze({
+    schemaVersion: 1,
+    runId: "run_01",
+    tabId: 42,
+    frameId: 0,
+    documentId: "document_01",
+    documentLifecycle: "ACTIVE",
+    pageGeneration: 1,
+    formGeneration: 2,
+    formGroupId: "employment_01",
+    logicalFieldFingerprint: H,
+    fieldInstanceGeneration: 0
+});
+
+export const normalizedStringFixture = Object.freeze({
+    schemaVersion: 1,
+    dataClass: "CANDIDATE_PRIVATE",
+    kind: "STRING",
+    value: "Bengaluru"
+});
+
+export const validSharedContractFixtures = Object.freeze({
+    FieldSemanticResult: {
+        schemaVersion: 1,
+        descriptorFingerprint: H,
+        status: "RESOLVED",
+        canonicalKey: "CURRENT_CITY",
+        mappingId: "mapping_01",
+        mappingVersion: 1,
+        resolver: "DETERMINISTIC",
+        confidence: 0.98,
+        candidates: [{ canonicalKey: "CURRENT_CITY", confidence: 0.98, source: "DETERMINISTIC" }],
+        optionSetHash: null,
+        valueFree: true,
+        reasonCodes: ["LABEL_AND_SECTION_MATCH"]
+    },
+    ScopeRank: sharedScopeFixture,
+    CanonicalAnswerPolicy: {
+        schemaVersion: 1,
+        policyVersion: 1,
+        canonicalKey: "CURRENT_CITY",
+        answerClass: "STABLE_FACT",
+        reuseDecision: "AUTO_VERSION",
+        defaultScope: sharedScopeFixture,
+        freshnessDays: 365,
+        autofill: "ALLOWED",
+        learningCommitPoint: "VERIFIED_SUBMISSION",
+        reasonCode: "LOW_RISK_STABLE_FACT"
+    },
+    NormalizedValue: normalizedStringFixture,
+    FieldAnswerContract: {
+        schemaVersion: 1,
+        contractId: "answer_contract_01",
+        canonicalKey: "CURRENT_CITY",
+        policyVersion: 1,
+        candidateAnswerVersionId: "answer_version_01",
+        normalizedValue: normalizedStringFixture,
+        normalizedValueHash: H,
+        scope: sharedScopeFixture,
+        source: "PROFILE",
+        sourceVersionId: "profile_version_01",
+        representation: { ruleKey: "TEXT_IDENTITY", ruleVersion: 1, renderedValue: "Bengaluru", renderedValueHash: H2 },
+        confidence: 0.99,
+        review: "NONE",
+        expiresAtMs: null,
+        protected: false
+    },
+    LogicalFieldIdentity: logicalFieldIdentityFixture,
+    FieldRevision: {
+        schemaVersion: 1,
+        revisionId: "revision_01",
+        identity: logicalFieldIdentityFixture,
+        operationId: "operation_01",
+        editSessionId: "edit_01",
+        sequence: 3,
+        actor: "CANDIDATE",
+        eventType: "EDIT_COMMITTED",
+        beforeValueHash: H,
+        intendedValueHash: H,
+        afterValueHash: H2,
+        canonicalKey: "CURRENT_CITY",
+        answerVersionId: "answer_version_01",
+        representationVersionId: "representation_01",
+        strategyVersionId: "strategy_01",
+        clientTimeMs: NOW,
+        valueFree: true
+    },
+    EditSession: {
+        schemaVersion: 1,
+        editSessionId: "edit_01",
+        identity: logicalFieldIdentityFixture,
+        startedAtMs: NOW,
+        lastActivityAtMs: NOW + 2000,
+        endedAtMs: NOW + 2500,
+        status: "COMMITTED",
+        firstRevisionSequence: 1,
+        lastRevisionSequence: 3,
+        initialValueHash: H,
+        finalValueHash: H2,
+        interruptionReason: null
+    },
+    CheckpointReceipt: {
+        schemaVersion: 1,
+        checkpointId: "checkpoint_01",
+        runId: "run_01",
+        applicationId: "application_01",
+        applicationContentRevisionId: "content_revision_01",
+        type: "REVIEW",
+        status: "VERIFIED",
+        source: "NAVIGATION",
+        observedAtMs: NOW,
+        evidenceHash: H,
+        valueFree: true
+    },
+    ApplicationContentRevision: {
+        schemaVersion: 1,
+        revisionId: "content_revision_01",
+        applicationId: "application_01",
+        runId: "run_01",
+        pageGeneration: 1,
+        formGeneration: 2,
+        formGroupId: "application_form_01",
+        fieldSetFingerprint: H,
+        contentFingerprint: H2,
+        employerRevisionTokenHash: null,
+        observedAtMs: NOW,
+        valueFree: true
+    },
+    ApplicationAuthorizationReceipt: {
+        schemaVersion: 1,
+        authorizationId: "authorization_01",
+        applicationId: "application_01",
+        runId: "run_01",
+        applicationContentRevisionId: "content_revision_01",
+        kind: "ORDINARY_DECLARATION_GROUP",
+        items: [{ logicalFieldFingerprint: H, canonicalKey: "PRIVACY_NOTICE", labelDigest: H2, impact: "ORDINARY", decision: "AUTHORIZED" }],
+        userGestureAtMs: NOW,
+        expiresAtMs: NOW + 600_000,
+        reusableCandidateMemory: false,
+        valueFree: true
+    },
+    ExtensionProtocolEnvelope: {
+        schemaVersion: 1,
+        protocolVersion: 1,
+        messageId: "message_01",
+        messageType: "FIELD_REVISION_BATCH",
+        source: "EXTENSION",
+        destination: "BACKEND",
+        sentAtMs: NOW,
+        correlationId: "correlation_01",
+        nonce: "0123456789abcdef",
+        dataClass: "STRUCTURAL",
+        containsProtectedValue: false,
+        payloadContract: "FieldRevision",
+        payloadHash: H,
+        payload: { revisionIds: ["revision_01"] }
+    },
+    TelemetryEnvelope: {
+        schemaVersion: 1,
+        telemetryId: "telemetry_01",
+        runId: "run_01",
+        sequence: 9,
+        occurredAtMs: NOW,
+        dimensions: {
+            ats: "workday",
+            portalKind: "WORKDAY",
+            eventType: "STRATEGY_RESULT",
+            outcome: "SUCCESS",
+            strategyId: "strategy_01",
+            adapterVersion: "1.15.8",
+            reasonCode: null,
+            checkpointType: "LOCAL_VALIDITY",
+            fieldType: "combobox"
+        },
+        measures: { durationMs: 182, count: 1 },
+        logicalFieldFingerprint: H,
+        operationHash: H2,
+        valueFree: true,
+        containsProtectedValue: false
+    },
+    EvidenceUpdate: {
+        schemaVersion: 1,
+        evidenceId: "evidence_01",
+        observationId: "observation_01",
+        classificationHash: H,
+        runId: "run_01",
+        applicationId: "application_01",
+        layer: "INTERACTION_STRATEGY",
+        subjectType: "INTERACTION_STRATEGY",
+        subjectKey: "strategy_01",
+        subjectKeyHash: H2,
+        aggregationScope: "SHARED_REDACTED",
+        scopeType: "FIELD_FINGERPRINT",
+        scopeKeyHash: H,
+        direction: "POSITIVE",
+        source: "STABLE_READBACK",
+        executionContext: "DIRECT",
+        checkpointType: "LOCAL_VALIDITY",
+        context: {
+            baseWeight: 700,
+            sourceReliabilityBps: 9000,
+            checkpointStrengthBps: 2500,
+            attributionConfidenceBps: 9500,
+            sampleQualityBps: 10000,
+            recencyBps: 10000,
+            scopeSimilarityBps: 10000,
+            completionStrengthBps: 3000,
+            riskMultiplierBps: 10000,
+            extensionTrustBps: 9000
+        },
+        formFingerprint: H2,
+        extensionVersion: "1.15.8",
+        adapterVersion: "workday-1",
+        occurredAtMs: NOW,
+        reasonCodes: ["STABLE_READBACK_MATCH"],
+        valueFree: true,
+        containsProtectedValue: false
+    }
+});

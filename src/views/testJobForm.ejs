@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Test Application</title>
+  <style>
+    body{margin:0;background:#f1f5f9;color:#102a43;font:16px ui-sans-serif,system-ui,sans-serif}.shell{max-width:780px;margin:32px auto;padding:0 18px}.card{background:white;border:1px solid #cbd5e1;border-radius:16px;padding:28px;box-shadow:0 12px 34px #0f172a12}.notice{background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px;margin-bottom:20px}label{display:block;font-weight:700;margin-top:15px}input,textarea{box-sizing:border-box;width:100%;margin-top:6px;border:1px solid #94a3b8;border-radius:8px;padding:10px;font:inherit}textarea{min-height:110px}button{margin-top:22px;border:0;border-radius:9px;background:#0f766e;color:white;padding:12px 18px;font-weight:700;font-size:16px}.success{background:#dcfce7;border:1px solid #22c55e;border-radius:12px;padding:22px}small{color:#64748b}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="card">
+      <% if (submitted) { %>
+        <div class="success" data-application-success><h1>Test application received</h1><p>Thank you for applying. This local confirmation has been verified and stored as SUCCESS.</p></div>
+      <% } else { %>
+        <div class="notice"><strong>Local test form only.</strong> No information is sent to an employer. Review all prefilled values before pressing Submit.</div>
+        <h1><%= application.title %></h1>
+        <p><%= application.company_name %> · Application COPILOT validation</p>
+        <form method="POST" action="/test-job-form/submit" enctype="multipart/form-data">
+          <input type="hidden" name="applicationId" value="<%= application.id %>" />
+          <label for="fullName">Full Name</label><input data-application-field id="fullName" name="fullName" value="<%= draft.fullName || '' %>" required />
+          <label for="email">Email</label><input data-application-field id="email" name="email" type="email" value="<%= draft.email || '' %>" required />
+          <label for="phone">Phone</label><input data-application-field id="phone" name="phone" value="<%= draft.phone || '' %>" required />
+          <label for="currentLocation">Current Location</label><input data-application-field id="currentLocation" name="currentLocation" value="<%= draft.currentLocation || '' %>" required />
+          <label for="currentCTC">Current CTC (LPA)</label><input data-application-field id="currentCTC" name="currentCTC" type="number" step="0.1" value="<%= draft.currentCTC || '' %>" required />
+          <label for="expectedCTC">Expected CTC (LPA)</label><input data-application-field id="expectedCTC" name="expectedCTC" type="number" step="0.1" value="<%= draft.expectedCTC || '' %>" required />
+          <label for="noticePeriod">Notice Period (days)</label><input data-application-field id="noticePeriod" name="noticePeriod" type="number" min="0" value="<%= draft.noticePeriod ?? '' %>" required />
+          <label for="nodeExperience">Years of Node.js Experience</label><input data-application-field id="nodeExperience" name="nodeExperience" type="number" min="0" step="0.5" value="<%= draft.nodeExperience || '' %>" required />
+          <label for="resume">Resume Upload</label>
+          <% if (resumeAttached) { %><small style="display:block;margin-top:6px;color:#047857"><strong>Attached by COPILOT:</strong> <%= resumeFileName %>. Choose another PDF only if you want to replace it.</small><% } %>
+          <input data-application-field id="resume" name="resume" type="file" accept="application/pdf" <%= resumeAttached ? '' : 'required' %> />
+          <label for="whyInterested">Why are you interested?</label><textarea data-application-field id="whyInterested" name="whyInterested" required><%= draft.whyInterested || '' %></textarea>
+          <small>COPILOT fills verified facts and pauses when an answer is unknown.</small>
+          <button id="testSubmit">Submit local test application</button>
+        </form>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

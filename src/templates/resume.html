@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{FULL_NAME}} — Resume</title>
+  <style>
+    :root {
+      --ink: #14213d;
+      --muted: #4b5563;
+      --line: #d1d5db;
+      --accent: #0f766e;
+    }
+    @page {
+      size: A4;
+      margin: 0.45in;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      color: var(--ink);
+      font-size: 10.5pt;
+      line-height: 1.35;
+    }
+    /* Legacy compatibility template. The maintained renderer uses templates/resumes/ats.html. */
+    .page {
+      width: 100%;
+      min-height: 257mm; /* A4 content height with ~0.45in margins */
+      overflow: visible;
+      padding: 0;
+    }
+    header {
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 20pt;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 10pt;
+    }
+    h2 {
+      margin: 10px 0 4px;
+      font-size: 10.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 2px;
+    }
+    p { margin: 0 0 6px; }
+    .role { margin-bottom: 8px; }
+    .role-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 2px;
+    }
+    .role-header span { color: var(--muted); font-size: 10pt; }
+    ul { margin: 0; padding-left: 16px; }
+    li { margin-bottom: 2px; }
+    .skills { color: var(--ink); }
+    .extra-skills { color: var(--muted); font-size: 10pt; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { overflow: visible; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>{{FULL_NAME}}</h1>
+      <div class="meta">
+        {{EMAIL}} · {{PHONE}} · {{LOCATION}}<br />
+        {{LINKEDIN}}{{GITHUB}}
+      </div>
+    </header>
+
+    <h2>Summary</h2>
+    <p>{{SUMMARY}}</p>
+
+    <h2>Skills</h2>
+    <p class="skills">{{SKILLS}}</p>
+    {{EXTRA_SKILLS_BLOCK}}
+
+    <h2>Experience</h2>
+    {{EXPERIENCE}}
+
+    {{PROJECTS}}
+
+    {{EDUCATION}}
+  </div>
+</body>
+</html>

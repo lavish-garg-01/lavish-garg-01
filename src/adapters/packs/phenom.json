@@ -1,0 +1,42 @@
+{
+  "portalKind": "phenom",
+  "version": 1,
+  "stage": "DEFAULT",
+  "textVerifyDelayMs": 350,
+  "hotPath": {
+    "identityOnly": true,
+    "skipLlmOn": [
+      "FIRST_NAME", "LAST_NAME", "FULL_NAME", "EMAIL", "PHONE", "COUNTRY",
+      "CURRENT_LOCATION", "EXPERIENCE_TITLE", "EXPERIENCE_COMPANY",
+      "EXPERIENCE_START_DATE", "EXPERIENCE_END_DATE", "EXPERIENCE_CURRENT",
+      "EDUCATION_INSTITUTION", "EDUCATION_MAJOR", "EDUCATION_DEGREE",
+      "EDUCATION_START_DATE", "EDUCATION_END_DATE", "SKILLS", "RESUME", "COVER_LETTER"
+    ]
+  },
+  "skipSelectors": [
+    "#typehead", "#language-selector", "#vendor-search-handler", "[id^='ot-group-id-']",
+    "#select-all-hosts-groups-handler", "#select-all-vendor-groups-handler", "#select-all-vendor-leg-handler"
+  ],
+  "fileFields": {
+    "resume": {
+      "testIds": ["phenom-resume"],
+      "labelPatterns": ["resume", "curriculum", "cv", "upload from pc"],
+      "eventRecipe": ["input", "change", "blur"],
+      "attachAttempts": 1,
+      "verifyDelayMs": 400
+    },
+    "coverLetter": {
+      "testIds": ["phenom-cover-letter"],
+      "labelPatterns": ["cover letter"],
+      "eventRecipe": ["input", "change", "blur"],
+      "attachAttempts": 1,
+      "verifyDelayMs": 400
+    }
+  },
+  "neverFill": ["password", "otp", "captcha", "legal", "consent"],
+  "overlays": {
+    "applicationRoute": "^/(?:[^/]+/){2}apply$",
+    "formContainers": "form.rjsf, form[class*='rjsf']",
+    "preferTestIdForUploads": true
+  }
+}

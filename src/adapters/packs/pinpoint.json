@@ -1,0 +1,34 @@
+{
+  "portalKind": "pinpoint",
+  "version": 1,
+  "stage": "DEFAULT",
+  "hotPath": {
+    "identityOnly": true,
+    "skipLlmOn": [
+      "FIRST_NAME", "LAST_NAME", "FULL_NAME", "EMAIL", "PHONE", "COUNTRY",
+      "CURRENT_LOCATION", "POSTAL_CODE", "PERSONAL_SUMMARY", "RESUME", "COVER_LETTER"
+    ]
+  },
+  "fileFields": {
+    "resume": {
+      "testIds": ["pinpoint-resume", "application_form[application][cv]"],
+      "labelPatterns": ["résumé", "resume", "curriculum", "cv"],
+      "eventRecipe": ["input", "change", "blur"],
+      "attachAttempts": 1,
+      "verifyDelayMs": 350
+    },
+    "coverLetter": {
+      "testIds": ["pinpoint-cover-letter"],
+      "labelPatterns": ["cover letter"],
+      "eventRecipe": ["input", "change", "blur"],
+      "attachAttempts": 1,
+      "verifyDelayMs": 350
+    }
+  },
+  "neverFill": ["password", "otp", "captcha", "legal", "consent"],
+  "overlays": {
+    "applicationRoute": "^/(?:[a-z]{2}/)?postings/[^/]+/applications/new$",
+    "formContainers": "form.external-form, #application-form",
+    "preferTestIdForUploads": true
+  }
+}

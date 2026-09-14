@@ -1,0 +1,55 @@
+{
+  "portalKind": "greenhouse",
+  "version": 1,
+  "stage": "DEFAULT",
+  "hotPath": {
+    "identityOnly": true,
+    "skipLlmOn": [
+      "FIRST_NAME",
+      "LAST_NAME",
+      "FULL_NAME",
+      "EMAIL",
+      "PHONE",
+      "RESUME",
+      "COVER_LETTER"
+    ]
+  },
+  "skipSelectors": [],
+  "fileFields": {
+    "resume": {
+      "testIds": [
+        "resume"
+      ],
+      "labelPatterns": [
+        "resume",
+        "curriculum",
+        "cv"
+      ],
+      "verifyDelayMs": 800
+    },
+    "coverLetter": {
+      "testIds": [
+        "cover_letter"
+      ],
+      "labelPatterns": [
+        "cover letter"
+      ],
+      "verifyDelayMs": 800
+    }
+  },
+  "neverFill": [
+    "password",
+    "otp",
+    "captcha",
+    "legal",
+    "consent"
+  ],
+  "controlKindAliases": {
+    "radiogroup": "choice-group"
+  },
+  "overlays": {
+    "embeddedFrameSelector": "#grnhse_iframe, iframe[src*='greenhouse.io'], iframe[src*='job_app']",
+    "formContainers": "form, [role=\"dialog\"], #application_form, #grnhse_app",
+    "preferTestIdForUploads": true
+  }
+}

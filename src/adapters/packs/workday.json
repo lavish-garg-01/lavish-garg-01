@@ -1,0 +1,58 @@
+{
+  "portalKind": "workday",
+  "version": 1,
+  "stage": "DEFAULT",
+  "hotPath": {
+    "identityOnly": true,
+    "skipLlmOn": [
+      "FIRST_NAME",
+      "LAST_NAME",
+      "FULL_NAME",
+      "EMAIL",
+      "PHONE",
+      "RESUME",
+      "COVER_LETTER"
+    ]
+  },
+  "skipSelectors": [
+    "input[aria-hidden='true']"
+  ],
+  "fileFields": {
+    "resume": {
+      "testIds": [
+        "file-upload-input-resume"
+      ],
+      "labelPatterns": [
+        "resume",
+        "curriculum",
+        "cv"
+      ]
+    },
+    "coverLetter": {
+      "testIds": [
+        "file-upload-input-coverLetter"
+      ],
+      "labelPatterns": [
+        "cover letter"
+      ]
+    }
+  },
+  "neverFill": [
+    "password",
+    "otp",
+    "captcha",
+    "legal",
+    "consent",
+    "honeypot"
+  ],
+  "controlKindAliases": {
+    "radiogroup": "choice-group"
+  },
+  "overlays": {
+    "applicationHost": "(?:^|\\.)myworkdayjobs\\.com$",
+    "applicationRoute": "/apply(?:/applyManually)?/?$",
+    "protectCreateAccountPassword": true,
+    "excludeHoneypot": true,
+    "preferTestIdForUploads": true
+  }
+}

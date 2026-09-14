@@ -1,0 +1,3 @@
+ALTER TABLE candidate_learning_note_confirmations DROP CONSTRAINT candidate_learning_note_confirmations_canonical_key_check;
+ALTER TABLE candidate_learning_note_confirmations ADD CONSTRAINT candidate_learning_note_confirmations_canonical_key_check CHECK (canonical_key IN ('FIRST_NAME','LAST_NAME','FULL_NAME','EMAIL','CURRENT_LOCATION','LINKEDIN_URL','GITHUB_URL','PORTFOLIO_URL','CURRENT_CTC','EXPECTED_CTC','NOTICE_PERIOD','TOTAL_EXPERIENCE','LAST_WORKING_DAY','START_DATE','WORK_MODE_REQUIREMENT','HEARING_SOURCE'));
+-- Scope remains bound in the immutable change set and answer scope, not a second mutable copy.
