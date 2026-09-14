@@ -5,6 +5,7 @@ import { ExecutionPlanRequestSchema, ExecutionRequestSchema, type ExecutionPlanR
 import type { FieldIntelligenceService, PrivateFieldIntelligenceResult } from "@job-hunter-v2/field-intelligence";
 import { createGraphNodeId, formGraphHash, reconcileFormGraph } from "@job-hunter-v2/form-graph";
 import { capabilityHints, ExecutionPlanningService } from "./service.js";
+import { RepresentationResolver } from "./representation.js";
 
 const pageInstanceId = crypto.randomUUID();
 const applicationRunId = crypto.randomUUID();
@@ -139,6 +140,9 @@ test("planner reuses authoritative private resolution and returns a transient op
   assert.equal(result.operations[0]?.canonicalKey, "EMAIL");
   assert.equal(result.operations[0]?.representation.kind, "TEXT");
   assert.equal(result.containsCandidateValue, true);
+  class DisabledEmail extends RepresentationResolver { override isEnabled(key:string){return key!=="EMAIL";} }
+  const disabled=await new ExecutionPlanningService(intelligence,new DisabledEmail()).plan({accountId:crypto.randomUUID(),candidateId:crypto.randomUUID(),request});
+  assert.equal(disabled.operations.length,0);assert.equal(disabled.skipped[0]?.reason,"POLICY_FORBIDS_EXECUTION");
   const question={version:1 as const,questionId:field.fieldRuntimeId,pageInstanceId,formInstanceId:field.formInstanceId,treeScopeId:"tree:12345",kind:"SINGLE_CONTROL" as const,memberIds:["member:12345"],memberCount:1,membershipComplete:true,containsCandidateValue:false as const};
   for(const changed of [{...question,questionId:"field:wrong"},{...question,pageInstanceId:crypto.randomUUID()},{...question,formInstanceId:"form:wrong"},{...question,kind:"SINGLE_CHOICE" as const},{...question,kind:"SINGLE_CHOICE" as const,memberCount:105,membershipComplete:false}]){
     const blocked=await new ExecutionPlanningService(intelligence).plan({accountId:crypto.randomUUID(),candidateId:crypto.randomUUID(),request:{...request,intelligence:{...request.intelligence,fields:[{...field,question:changed}]}}});
@@ -207,6 +211,10 @@ test("R8 J semantics drive R selection while K receives an exact file operation"
     assert.equal(result.operations[0]?.capabilityHints[0], "FILE_INPUT");
     assert.equal("selectionSource" in (result.operations[0]?.representation ?? {}), false);
     assert.equal("idempotentReplay" in (result.operations[0]?.representation ?? {}), false);
+    class DisabledDocument extends RepresentationResolver { override isEnabled(){return false;} }
+    const stop=new ExecutionPlanningService({resolvePrivate:async()=>privateResult} as unknown as Pick<FieldIntelligenceService,"resolvePrivate">,new DisabledDocument(),undefined,{resolve:async()=>{throw new Error("Disabled file must never retrieve bytes.");}});
+    const stopped=await stop.plan({accountId:crypto.randomUUID(),candidateId:crypto.randomUUID(),request:fileRequest});
+    assert.equal(stopped.operations.length,0);assert.equal(stopped.skipped[0]?.reason,"POLICY_FORBIDS_EXECUTION");
   }
 });
 

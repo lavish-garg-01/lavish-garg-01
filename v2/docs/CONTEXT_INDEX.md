@@ -4,6 +4,8 @@ Updated 2026-09-13 after the adversarial audit and implementation architecture s
 
 ## Start here
 
+- **Local admin workspace, 2026-09-15:** [setup, controls and verification](ADMIN_WORKSPACE.md). Separate local environment email/password login; candidate knowledge/version editing and restoration, canonical reviews/aliases, guarded representation defaults and previews, strategy lifecycle controls, account/job/run/worker operations, telemetry and append-only audit. Migration 0034 is applied. Production identity, policy changes and arbitrary new runtime code remain gated; admin access is not evidence of autofill accuracy.
+
 - **Local test preparation completed 2026-09-14:** [testing handoff](REAL_APPLICATION_TESTING.md). Local DB backed up and migrations through 0033 applied; web/API running and extension rebuilt. Profile, master-resume file and 99 stored jobs verified. OpenAI synthetic extraction/tailoring passed; Gemini failed schema/availability checks. Chrome reload remains pending because the Mac was locked. Latest repeated HTTP check was blocked by approval-service usage limit; listener processes remain present.
 
 - **Roadmap addition:** [passive candidate learning and derived-answer plan](PASSIVE_CANDIDATE_LEARNING_PLAN.md), requested 2026-09-14. Covers intent/qualifiers, deterministic calculations, provenance, scoped predictions, correction/submission feedback and a planned 320+ case benchmark. Proposal only; no passive prediction activated. Current supervised real-form testing should establish the baseline alongside this work.

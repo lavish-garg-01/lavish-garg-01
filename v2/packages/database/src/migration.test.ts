@@ -39,6 +39,7 @@ import {
   migrateReviewedExports,
   migrateScopedNoteRecovery,
   migrateLearningFingerprintVersions,
+  migrateAdminWorkspace,
   loadInitialMigration,
   migrateInitialSchema,
   type SqlClient,
@@ -180,7 +181,7 @@ test("0015 installs value-private verified-learning staging and replay-safe evid
   await database.close();
 });
 
-test("the complete ordered migration chain reaches 0033 without duplicate schema ownership", async () => {
+test("the complete ordered migration chain reaches 0034 without duplicate schema ownership", async () => {
   const database = new PGlite();
   const sql = client(database);
   const migrations = [
@@ -216,7 +217,8 @@ test("the complete ordered migration chain reaches 0033 without duplicate schema
     migrateCaseMerge,
     migrateReviewedExports,
     migrateScopedNoteRecovery,
-    migrateLearningFingerprintVersions
+    migrateLearningFingerprintVersions,
+    migrateAdminWorkspace
   ] as const;
 
   for (const migrate of migrations) assert.equal((await migrate(sql)).applied, true);

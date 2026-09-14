@@ -22,6 +22,8 @@ const ApiConfigSchema = z
     PORT: z.coerce.number().int().min(1).max(65_535).default(3100),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
     DATABASE_URL: z.string().url().optional(),
+    ADMIN_EMAIL: z.string().email().optional(),
+    ADMIN_PASSWORD: z.string().min(12).max(512).optional(),
     OPERATOR_DATABASE_URL: z.string().url().optional(),
     OIDC_PROVIDER: z.string().trim().min(1).max(80).optional(),
     OIDC_ISSUER: z.string().url().optional(),
@@ -42,6 +44,8 @@ const ApiConfigSchema = z
   })
   .strict()
   .superRefine((config, context) => {
+    if (Boolean(config.ADMIN_EMAIL) !== Boolean(config.ADMIN_PASSWORD)) context.addIssue({ code: "custom", message: "Set ADMIN_EMAIL and ADMIN_PASSWORD together." });
+    if (config.ADMIN_EMAIL && (!config.DATABASE_URL || config.NODE_ENV === "production" || !["127.0.0.1", "localhost", "::1"].includes(config.HOST))) context.addIssue({ code: "custom", message: "Temporary admin login requires a database and a local development/test API. Use managed authentication for production." });
     if(!config.CANDIDATE_VALUE_HMAC_SECRET&&(config.CANDIDATE_VALUE_HMAC_PREVIOUS_KEYS||config.CANDIDATE_VALUE_HMAC_KEY_VERSION!==1))context.addIssue({code:"custom",message:"Fingerprint key history requires an active secret."});
     if(config.CANDIDATE_VALUE_HMAC_SECRET){
       try{new HmacCandidateValueFingerprinter(config.CANDIDATE_VALUE_HMAC_SECRET,config.CANDIDATE_VALUE_HMAC_KEY_VERSION,config.CANDIDATE_VALUE_HMAC_PREVIOUS_KEYS);}
@@ -68,7 +72,7 @@ const ApiConfigSchema = z
         message: "Phase G API configuration requires database, fingerprint and proposal-encryption settings together."
       });
     }
-    if (!config.ENABLE_DEV_AUTH && anyAuthConfigured && oidc.some((value) => !value)) {
+    if (!config.ENABLE_DEV_AUTH && anyAuthConfigured && (!config.ADMIN_EMAIL || oidc.some(Boolean)) && oidc.some((value) => !value)) {
       context.addIssue({ code: "custom", message: "OIDC provider, issuer, audience and JWKS URL are required together." });
     }
     if (config.ENABLE_DEV_AUTH && config.NODE_ENV !== "development") {
@@ -100,6 +104,8 @@ export function readApiConfig(environment: NodeJS.ProcessEnv = process.env): Api
     PORT: environment.PORT,
     LOG_LEVEL: environment.LOG_LEVEL,
     DATABASE_URL: environment.DATABASE_URL,
+    ADMIN_EMAIL: environment.ADMIN_EMAIL,
+    ADMIN_PASSWORD: environment.ADMIN_PASSWORD,
     OPERATOR_DATABASE_URL: environment.OPERATOR_DATABASE_URL,
     OIDC_PROVIDER: environment.OIDC_PROVIDER,
     OIDC_ISSUER: environment.OIDC_ISSUER,

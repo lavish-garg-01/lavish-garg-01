@@ -13,11 +13,24 @@ import {
   type FieldCanonicalizationAiPort
 } from "./semantic-resolver.js";
 import { FieldIntelligenceService } from "./service.js";
+import { configureCanonicalAliases } from "./ontology.js";
 
 const page: FieldIntelligencePageContext = {
   host: "jobs.example.test", ats: "GENERIC", pageHeading: "Application",
   jobId: null, applicationId: null, countryCode: null, roleFamily: null, companyId: null
 };
+
+test("admin alias changes invalidate existing semantic caches and retain scoped guards",async()=>{
+  const resolver=new FieldSemanticResolver(),input=field("candidate electronic address");
+  try {
+    const before=await resolver.resolve(input,page,false);assert.notEqual(before.resolution.canonicalKey,"EMAIL");
+    configureCanonicalAliases(new Map([["EMAIL",["candidate electronic address"]]]));
+    const after=await resolver.resolve(input,page,false);assert.equal(after.resolution.canonicalKey,"EMAIL");assert.equal(after.cacheHit,false);
+    const repeat=await resolver.resolve(input,page,false);assert.equal(repeat.cacheHit,true);
+    configureCanonicalAliases(new Map());
+    assert.notEqual((await resolver.resolve(input,page,false)).resolution.canonicalKey,"EMAIL");
+  }finally{configureCanonicalAliases(new Map());}
+});
 
 function field(label: string, options: {
   type?: SemanticControlType;

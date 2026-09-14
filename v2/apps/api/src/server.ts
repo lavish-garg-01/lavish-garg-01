@@ -56,6 +56,9 @@ import { createApi } from "./app.js";
 import { allowedWebOrigins, readApiConfig } from "./config.js";
 import { createDevelopmentIdentityVerifier } from "./development-auth.js";
 import { assertSupportedNodeRuntime } from "./runtime.js";
+import { AdminAuth } from "./admin-auth.js";
+import { AdminWorkspace } from "./admin-workspace.js";
+import { AdminRepresentationResolver } from "./admin-runtime.js";
 
 assertSupportedNodeRuntime();
 const config = readApiConfig();
@@ -195,10 +198,16 @@ const strategyRepository = database && process.env.STRATEGY_INTELLIGENCE_ENABLED
 const strategyIntelligence = strategyRepository && process.env.CANDIDATE_VALUE_HMAC_SECRET
   ? new StrategyIntelligenceService(strategyRepository, process.env.CANDIDATE_VALUE_HMAC_SECRET, ai) : null;
 if (strategyIntelligence) await strategyIntelligence.initialize();
+const adminRuntime = new AdminRepresentationResolver();
+const adminWorkspace = database && fingerprinter
+  ? new AdminWorkspace(database,config.ADMIN_EMAIL??"runtime",fingerprinter,adminRuntime,strategyIntelligence) : null;
+const adminRuntimeReady = adminWorkspace ? await adminWorkspace.runtimeAvailable() : false;
+if (config.ADMIN_EMAIL && !adminRuntimeReady) throw new Error("Admin schema is missing. Run npm run db:migrate before starting the API.");
+if (adminRuntimeReady) await adminWorkspace!.refresh();
 const phaseK = sessions && fieldIntelligence && declarations
   ? { sessions, execution: strategyIntelligence && strategyRepository
-      ? new StrategyPlanningBridge(new ExecutionPlanningService(fieldIntelligence, undefined, declarations, applicationDocuments), strategyIntelligence, strategyRepository)
-      : new ExecutionPlanningService(fieldIntelligence, undefined, declarations, applicationDocuments),
+      ? new StrategyPlanningBridge(new ExecutionPlanningService(fieldIntelligence, adminRuntime, declarations, applicationDocuments), strategyIntelligence, strategyRepository)
+      : new ExecutionPlanningService(fieldIntelligence, adminRuntime, declarations, applicationDocuments),
       ...(applicationDocuments ? { documents: applicationDocuments } : {}) }
   : undefined;
 const learning = database && fingerprinter && config.RESUME_PROPOSAL_ENCRYPTION_KEY
@@ -218,6 +227,8 @@ const phaseL = sessions && learning ? { sessions, learning, ...(recovery ? { rec
 const phaseM = sessions && repeatableEntities ? { sessions, entities: repeatableEntities } : undefined;
 const phaseO = sessions && declarations ? { sessions, declarations } : undefined;
 const app = await createApi({
+  ...(adminRuntimeReady ? {refreshAdminRuntime:()=>adminWorkspace!.refresh()} : {}),
+  ...(adminWorkspace && config.ADMIN_EMAIL && config.ADMIN_PASSWORD ? {admin:{auth:new AdminAuth(config.ADMIN_EMAIL,config.ADMIN_PASSWORD),workspace:adminWorkspace}} : {}),
   ...(operatorDatabase && config.OIDC_ISSUER && config.OIDC_AUDIENCE && config.OIDC_JWKS_URL ? { operators: {
     verifier: new OperatorTokenVerifier({ issuer: config.OIDC_ISSUER, audience: config.OIDC_AUDIENCE, jwksUrl: new URL(config.OIDC_JWKS_URL) }), repository: new OperatorReviewRepository(operatorDatabase),
     ...(config.ENABLE_REVIEWED_EXPORTS?{reviewedExports:new ReviewedExportRepository(operatorDatabase)}:{}),

@@ -196,6 +196,10 @@ export class ExecutionPlanningService {
         skipped.push({ fieldRuntimeId: field.fieldRuntimeId, canonicalKey, reason: "SEMANTIC_NOT_HIGH_CONFIDENCE", containsCandidateValue: false });
         continue;
       }
+      if (!this.representations.isEnabled(canonicalKey)) {
+        skipped.push({ fieldRuntimeId: field.fieldRuntimeId, canonicalKey, reason: "POLICY_FORBIDS_EXECUTION", containsCandidateValue: false });
+        continue;
+      }
       if (declaration) {
         const declarationAuthorization = declaration.decision.authorization;
         if (!declarationAuthorization) {

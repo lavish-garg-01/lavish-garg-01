@@ -14,8 +14,11 @@ import { registerPhaseMRoutes, type PhaseMApiServices } from "./repeatable-entit
 import { registerPhaseORoutes, type PhaseOApiServices } from "./declaration-routes.js";
 import { isAllowedCorsOrigin } from "./config.js";
 import { registerOperatorRoutes, type OperatorServices } from "./operator-routes.js";
+import { registerAdminRoutes, type AdminServices } from "./admin-routes.js";
 
 export interface CreateApiOptions {
+  admin?: AdminServices;
+  refreshAdminRuntime?: () => Promise<void>;
   operators?: OperatorServices;
   logger?: boolean | { level: string };
   exposeDocumentation?: boolean;
@@ -92,6 +95,10 @@ export async function createApi(options: CreateApiOptions = {}): Promise<Fastify
   if (options.exposeDocumentation === true) {
     await app.register(swaggerUi, { routePrefix: "/docs" });
   }
+  if (options.admin) await registerAdminRoutes(app, options.admin);
+  if (options.refreshAdminRuntime) app.addHook("preHandler", async request=>{
+    if (["/v1/field-intelligence/resolve","/v1/execution/plan"].includes(request.routeOptions.url??"")) await options.refreshAdminRuntime!();
+  });
 
   app.get(
     "/health",

@@ -5,6 +5,7 @@
   "type": "module",
   "main": "./dist/server.js",
   "dependencies": {
+    "kysely": "0.29.5",
     "@job-hunter-v2/strategy-intelligence": "0.1.0",
     "@job-hunter-v2/ai": "0.1.0",
     "@fastify/cors": "^11.3.0",

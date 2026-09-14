@@ -91,7 +91,16 @@ const byKey = new Map(allDefinitions.map((definition) => [definition.key, defini
 
 export function canonicalDefinitions(): readonly CanonicalDefinition[] { return allDefinitions; }
 export function canonicalDefinitionFor(key: string): CanonicalDefinition | null { return byKey.get(key) ?? null; }
-export function aliasRules(): readonly AliasRule[] { return rules; }
+let configuredAliases: ReadonlyMap<string, readonly string[]> = new Map();
+let aliasRevision = 0;
+export function canonicalAliasRevision(): number { return aliasRevision; }
+/** Admin aliases inherit each built-in rule's scope, negative and type guards. */
+export function configureCanonicalAliases(aliases: ReadonlyMap<string, readonly string[]>): void {
+  if (JSON.stringify([...configuredAliases]) !== JSON.stringify([...aliases])) { configuredAliases = new Map(aliases); aliasRevision++; }
+}
+export function aliasRules(): readonly AliasRule[] {
+  return rules.map(rule => ({ ...rule, aliases: [...rule.aliases, ...(configuredAliases.get(rule.canonicalKey) ?? [])] }));
+}
 
 export function fieldTypeCompatibility(controlType: SemanticControlType, canonicalKey: string): number {
   const definition = canonicalDefinitionFor(canonicalKey);

@@ -13,7 +13,7 @@ import {
 } from "@job-hunter-v2/contracts";
 import { candidateAnswerPolicy } from "@job-hunter-v2/candidate-truth";
 import { normalizeFieldEvidence, normalizeSemanticText, type NormalizedFieldEvidence } from "./evidence.js";
-import { aliasRules, canonicalDefinitionFor, fieldTypeCompatibility, policyAllowsSemanticResolution } from "./ontology.js";
+import { aliasRules, canonicalAliasRevision, canonicalDefinitionFor, fieldTypeCompatibility, policyAllowsSemanticResolution } from "./ontology.js";
 import type { FieldEvidenceInput } from "@job-hunter-v2/contracts";
 
 export const FIELD_CONFIDENCE_POLICY_VERSION = "J1-2026-09";
@@ -370,8 +370,8 @@ export class FieldSemanticResolver {
         valuePrivate: true, containsCandidateValue: false
       }), aiRequests: 0, cacheHit: false };
     }
-    const cacheKey = JSON.stringify([evidence.descriptorFingerprint, allowAi, aiContext?.accountId ?? null, aiContext?.candidateId ?? null, aiContext?.applicationId ?? null]);
-    const enrichedKey = JSON.stringify([evidence.descriptorFingerprint, true, aiContext?.accountId ?? null, aiContext?.candidateId ?? null, aiContext?.applicationId ?? null]);
+    const cacheKey = JSON.stringify([canonicalAliasRevision(), evidence.descriptorFingerprint, allowAi, aiContext?.accountId ?? null, aiContext?.candidateId ?? null, aiContext?.applicationId ?? null]);
+    const enrichedKey = JSON.stringify([canonicalAliasRevision(), evidence.descriptorFingerprint, true, aiContext?.accountId ?? null, aiContext?.candidateId ?? null, aiContext?.applicationId ?? null]);
     const cached = this.cache.get(enrichedKey) ?? this.cache.get(cacheKey);
     if (cached) return {
       resolution: FieldSemanticResolutionSchema.parse({ ...cached, fieldRuntimeId: evidence.fieldRuntimeId, descriptorFingerprint: evidence.descriptorFingerprint, resolver: "CACHE", entityBinding: evidence.repeatableEvidence, valuePrivate: true, containsCandidateValue: false }),

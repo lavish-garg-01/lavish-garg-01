@@ -52,6 +52,8 @@ function formatDate(isoDate: string, precision: "DAY" | "MONTH" | "YEAR", field:
 }
 
 export class RepresentationResolver {
+  /** Runtime configuration may withdraw a field from future plans, including document flows. */
+  isEnabled(canonicalKey: string): boolean { void canonicalKey; return true; }
   resolve(value: PersistableNormalizedValue, field: FieldEvidenceInput, meaning: { canonicalKey?: string; temporalAnchor?: "OFFER_ACCEPTANCE" } = {}): FieldRepresentation {
     try { return this.render(value, field, meaning); }
     catch (error) {

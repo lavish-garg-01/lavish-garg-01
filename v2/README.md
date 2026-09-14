@@ -1,5 +1,7 @@
 # Job Hunter V2
 
+Local administration: [Admin workspace setup, controls and safety boundaries](docs/ADMIN_WORKSPACE.md). Open `http://127.0.0.1:3000/#admin`; separate email/password credentials live in the API `.env`, without Supabase.
+
 Start with [the context index](docs/CONTEXT_INDEX.md) for ownership, decisions, known issues and source links. The [implementation checkpoint](docs/IMPLEMENTATION_CHECKPOINT.md) records completion through Phase Q: 304 passing tests and green browser/build gates. Next boundary: Phase R. [Strategy Intelligence](docs/STRATEGY_INTELLIGENCE.md) documents default-enabled observation, review-gated candidate rollout and operator controls; run migrations through0020 before API startup. See [AI orchestration](docs/AI_ORCHESTRATOR.md) for server-only provider setup and limits. The older slice list below describes the initial foundation.
 
 V2 is the clean production rebuild. The repository root remains the frozen V1 reference system, behavior oracle, fixture corpus and migration source during cutover.

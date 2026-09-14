@@ -1,6 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { inTransaction } from "./transaction-scope.js";
 export { learningCheckpointUnitOfWork } from "./learning-unit-of-work.js";
+export async function migrateAdminWorkspace(client: SqlClient): Promise<MigrationResult> {
+  const path = fileURLToPath(new URL("../../../database/migrations/0034_admin_workspace.sql", import.meta.url));
+  return applyMigration(client, { version: "0034_admin_workspace", sql: await readFile(path, "utf8") });
+}
 export { KyselyLearningRecovery, purgeExpiredLearningInbox } from "./learning-recovery.js";
 export { learningFingerprintKeyStatus } from "./learning-key-status.js";
 export async function migrateLearningFingerprintVersions(client: SqlClient): Promise<MigrationResult> {

@@ -32,7 +32,8 @@ import {
   migrateCaseMerge,
   migrateReviewedExports,
   migrateScopedNoteRecovery,
-  migrateLearningFingerprintVersions
+  migrateLearningFingerprintVersions,
+  migrateAdminWorkspace
 } from "@job-hunter-v2/database";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -72,7 +73,8 @@ const migrations = [
   migrateCaseMerge,
   migrateReviewedExports,
   migrateScopedNoteRecovery,
-  migrateLearningFingerprintVersions
+  migrateLearningFingerprintVersions,
+  migrateAdminWorkspace
 ] as const;
 
 try {
