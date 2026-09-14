@@ -57,7 +57,7 @@ function editableValue(value: NormalizedValue): string {
 export function CareerSetup({ api, profile, onSaved }: { api: CandidateApi; profile: ProfileSnapshot; onSaved: (id: string) => Promise<void> }) {
   const [scopeChoice, setScopeChoice] = useState("GLOBAL");
   const [jobs, setJobs] = useState<{ id: string; title: string; company: string }[]>([]);
-  useEffect(() => { let active = true; void api.jobs({ limit: 100 }).then((page) => { if (active) setJobs(page.items); }).catch(() => undefined); return () => { active = false; }; }, [api]);
+  useEffect(() => { let active = true; void api.jobs({ limit: 50 }).then((page) => { if (active) setJobs(page.items); }).catch(() => undefined); return () => { active = false; }; }, [api]);
   const selectedScope = scopeChoice === "GLOBAL" ? { type: "GLOBAL", context: {} }
     : scopeChoice.startsWith("job:") ? { type: "JOB", context: { jobId: scopeChoice.slice(4) } }
     : (() => { const answer = profile.answers.find((item) => item.answerVersionId === scopeChoice); return { type: answer?.scopeType ?? "GLOBAL", context: answer?.scope ?? {} }; })();
